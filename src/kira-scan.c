@@ -1,4 +1,4 @@
-#include "net.h"
+#include "bits.h"
 #include "kira-scan.h"
 
 short __xscan_init__( const char **argv, struct xp_setup *setup )

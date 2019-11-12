@@ -15,6 +15,7 @@ int main( int argc, char **argv )
     }
 
     if ( __xscan_init__( (const char **) argv, &setup ) < 0 ){
+        printf( "%s\n", xscan_errbuf );
         __usage( argv[0] );
     }
 

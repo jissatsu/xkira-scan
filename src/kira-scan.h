@@ -21,11 +21,14 @@ extern "C" {
 #define MAXWAIT 10
 #define MAXKPACKET 4096
 
+// xscan error buffer
+char xscan_errbuf[0xFF];
+
 typedef enum { X_SYN, X_ICMP } scan_t;
 struct ports
 {
     uint16_t start;
-    uint16_t end;
+    uint16_t end;  /* 0 if no port range was specified */
 };
 
 struct host
