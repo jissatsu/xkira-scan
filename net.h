@@ -10,7 +10,8 @@
 extern "C" {
 #endif
 
-inline __attribute__((always_inline)) void CNVRT_IP( const char *ip, 
+/* Convert an ip address from string to a 4 byte array */
+inline __attribute__((always_inline)) void IP2B( const char *ip, 
                                               uint8_t *dst )
 {
     char frag[4];
@@ -33,12 +34,21 @@ inline __attribute__((always_inline)) void CNVRT_IP( const char *ip,
     return;
 }
 
+/* Convert an ip address from 4-byte array to string  */
+inline __attribute__((always_inline)) void B2IP( const uint8_t *src, 
+                                                 char *dst )
+{
+    sprintf( dst, "%d.%d.%d.%d", src[0], src[1], src[2], src[3] );
+    return;
+}
+
+/* Convert an ip from string to a 32-bit integer */
 inline __attribute__((always_inline)) uint32_t IP2LB( const char *ip )
 {
     uint32_t rtv = 0;
     uint8_t _ip[4];
     
-    CNVRT_IP( ip, _ip );
+    IP2B( ip, _ip );
     rtv =
         (_ip[0] << 24) |
         (_ip[1] << 16) |
@@ -47,9 +57,34 @@ inline __attribute__((always_inline)) uint32_t IP2LB( const char *ip )
     return rtv;
 }
 
-inline __attribute__((always_inline)) const char * LB2IP( uint32_t _cp )
+/* Convert a 32-bit integer to an ip string */
+inline __attribute__((always_inline)) void LB2IP( uint32_t _cp, 
+                                                  char *dst )
 {
-    return NULL;
+    uint8_t arr[4];
+    arr[0] = (_cp >> 24) & 0xff;
+    arr[1] = (_cp >> 16) & 0xff;
+    arr[2] = (_cp >>  8) & 0xff;
+    arr[3] = (_cp >>  0) & 0xff;
+    B2IP( arr, dst );
+    return;
+}
+
+/*
+Calculate netmask from subnet
+/16 -> 255.255.0.0
+/24 -> 255.255.255.0 etc... */
+inline __attribute__((always_inline)) short MSK_FR_SUB( short subnet,
+                                                       char *mask )
+{
+    if ( subnet < 16 || subnet > 30 ) {
+        return -1;
+    }
+
+    short max    = 32; /* netmask max size is 32 bits */
+    uint32_t msk = (0xffffffff >> (max - subnet)) << (max - subnet);
+    LB2IP( msk, mask );
+    return 0;
 }
 
 #ifdef __cplusplus
