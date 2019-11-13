@@ -10,6 +10,21 @@
 extern "C" {
 #endif
 
+/* Generic checksum */
+inline __attribute__((always_inline)) uint16_t k_cksum( uint16_t *buff, 
+                                                        int size )
+{
+    uint32_t sum  = 0;
+    while ( size > 1 ) {
+        sum += *buff++;
+        size -= 2;
+    }
+
+    sum = (sum >> 16) + (sum & 0xffff);
+    sum += (sum >> 16);
+    return ~((uint16_t) sum);
+}
+
 /* Convert an ip address from string to a 4 byte array */
 inline __attribute__((always_inline)) void IP2B( const char *ip, 
                                               uint8_t *dst )
@@ -71,7 +86,7 @@ inline __attribute__((always_inline)) void LB2IP( uint32_t _cp,
 }
 
 /*
-Calculate netmask from subnet
+Retrieve netmask from subnet
 /16 -> 255.255.0.0
 /24 -> 255.255.255.0 etc... */
 inline __attribute__((always_inline)) short MSK_FR_SUB( short subnet,

@@ -1,4 +1,4 @@
-#include "bits.h"
+#include "inline.h"
 #include "kira-scan.h"
 
 short __xscan_init__( const char **argv, struct xp_setup *setup )
@@ -6,17 +6,22 @@ short __xscan_init__( const char **argv, struct xp_setup *setup )
     return 0;
 }
 
-uint16_t k_cksum( uint16_t *buff, int size )
+void xscan_init_packet( struct protoent *proto, struct xp_setup setup )
 {
-    uint32_t sum  = 0;
-    while ( size > 1 ) {
-        sum += *buff++;
-        size -= 2;
+    switch ( proto->p_proto ) {
+        case IPPROTO_ICMP:
+            printf( "ICMP YO!\n" );
+            break;
+        case IPPROTO_TCP:
+            printf( "TCP YO!\n" );
+            break;
     }
+    return;
+}
 
-    sum = (sum >> 16) + (sum & 0xffff);
-    sum += (sum >> 16);
-    return ~((uint16_t) sum);
+void xhost_info( char *host, struct xp_setup *setup )
+{
+    struct hostent *hp;
 }
 
 short is_ip_format( char *host )
@@ -36,7 +41,7 @@ short is_ip_format( char *host )
     return 0;
 }
 
-void xhost_info( char host, struct xp_setup *setup )
+void print_icmp( struct icmp *icmp )
 {
     ;
 }

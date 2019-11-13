@@ -19,6 +19,9 @@ int main( int argc, char **argv )
         __usage( argv[0] );
     }
 
+    stats.nrecv = 0;
+    stats.nsent = 0;
+    
     switch ( setup.type ) {
         case X_SYN:
             proto = getprotobyname( "tcp" );
@@ -26,7 +29,12 @@ int main( int argc, char **argv )
         case X_ICMP:
             proto = getprotobyname( "icmp" );
             break;
+        default:
+            printf( "Scan modes available: --icmp or --syn" );
+            return -1;
     }
+
+    xscan_init_packet( proto, setup );
 
     if ( setup.on ) {
         signal( SIGINT,  __diE__ );

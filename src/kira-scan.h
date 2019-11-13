@@ -37,16 +37,6 @@ struct host
     char *ip;
 };
 
-struct xp_setup
-{
-    pid_t pid;
-    short type;
-    short on;
-    char *host;
-    struct ports _ports;
-    struct host _host;
-};
-
 struct xp_net
 {
     short subnet;
@@ -54,12 +44,28 @@ struct xp_net
     uint32_t start;
 };
 
+struct xp_setup
+{
+    pid_t pid;   /* process id */
+    short type;  /* scan type (icmp or syn) */
+    short on;    /*  */
+    struct ports _ports;
+    struct host _host;
+    struct xp_net _net;
+};
+
+struct xp_stats
+{
+    uint16_t nrecv;  /* number of received replies */
+    uint16_t nsent;  /* number of packets sent */
+}
+stats;
+
 short   __xscan_init__( const char **argv, struct xp_setup *setup );
 short   is_ip_format( char *host );
 void    __diE__( int sig );
-void    xhost_info( char host, struct xp_setup *setup );
-
-uint16_t k_cksum( uint16_t *buff, int size );
+void    xhost_info( char *host, struct xp_setup *setup );
+void    xscan_init_packet( struct protoent *proto, struct xp_setup setup );
 
 #ifdef __cplusplus
 }
