@@ -5,14 +5,20 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
+
+#ifdef __GNUC__
+    #define __inline __attribute__((always_inline))
+#else
+    #define __inline
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Generic checksum */
-inline __attribute__((always_inline)) uint16_t k_cksum( uint16_t *buff, 
-                                                        int size )
+inline __inline uint16_t k_cksum( uint16_t *buff, int size )
 {
     uint32_t sum  = 0;
     while ( size > 1 ) {
@@ -26,39 +32,34 @@ inline __attribute__((always_inline)) uint16_t k_cksum( uint16_t *buff,
 }
 
 /* Convert an ip address from string to a 4 byte array */
-inline __attribute__((always_inline)) void IP2B( const char *ip, 
-                                              uint8_t *dst )
+inline __inline void IP2B( const char *ip, uint8_t *dst )
 {
     char frag[4];
     uint8_t rtv[4];
-    int i, j;
-
-    i = 0;
-    j = 0;
-
-    while ( *ip != '\0' ) {
-        if ( *ip == '.' ) {
-            frag[i] = '\0', i = 0, rtv[j++] = atoi( frag ), ip++;
-        } else {
-            frag[i++] = *ip++;
+    
+    if ( ip ) {
+        for ( int i = 0, j = 0, k = 0 ; i < 4 ; i++ ) {
+            frag[j]     = (isdigit( *ip )) ? *ip++ : '\0' ;
+            frag[j + 1] = (isdigit( *ip )) ? *ip++ : '\0' ;
+            frag[j + 2] = (isdigit( *ip )) ? *ip++ : '\0' ;
+            frag[j + 3] = '\0';
+            ip++;
+            rtv[k++] = atoi( frag );
         }
+        memcpy( dst, rtv, 4 );
     }
-    frag[i] = '\0';
-    rtv[j]  = atoi( frag );
-    memcpy( dst, rtv, 4 );
     return;
 }
 
 /* Convert an ip address from 4-byte array to string  */
-inline __attribute__((always_inline)) void B2IP( const uint8_t *src, 
-                                                 char *dst )
+inline __inline void B2IP( const uint8_t *src, char *dst )
 {
     sprintf( dst, "%d.%d.%d.%d", src[0], src[1], src[2], src[3] );
     return;
 }
 
 /* Convert an ip from string to a 32-bit integer */
-inline __attribute__((always_inline)) uint32_t IP2LB( const char *ip )
+inline __inline uint32_t IP2LB( const char *ip )
 {
     uint32_t rtv = 0;
     uint8_t _ip[4];
@@ -73,8 +74,7 @@ inline __attribute__((always_inline)) uint32_t IP2LB( const char *ip )
 }
 
 /* Convert a 32-bit integer to an ip string */
-inline __attribute__((always_inline)) void LB2IP( uint32_t _cp, 
-                                                  char *dst )
+inline __inline void LB2IP( uint32_t _cp, char *dst )
 {
     uint8_t arr[4];
     arr[0] = (_cp >> 24) & 0xff;
@@ -89,8 +89,7 @@ inline __attribute__((always_inline)) void LB2IP( uint32_t _cp,
 Retrieve netmask from subnet
 /16 -> 255.255.0.0
 /24 -> 255.255.255.0 etc... */
-inline __attribute__((always_inline)) short MSK_FR_SUB( short subnet,
-                                                       char *mask )
+inline __inline short MSK_FR_SUB( short subnet, char *mask )
 {
     if ( subnet < 16 || subnet > 30 ) {
         return -1;

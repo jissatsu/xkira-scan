@@ -7,7 +7,6 @@ void __usage( char *prog )
 
 int main( int argc, char **argv )
 {
-    struct xp_setup setup;
     struct protoent *proto;
 
     if ( argc != 4 ) {
@@ -34,7 +33,7 @@ int main( int argc, char **argv )
             return -1;
     }
 
-    xscan_init_packet( proto, setup );
+    xscan_init_packet( proto );
 
     if ( setup.on ) {
         signal( SIGINT,  __diE__ );
