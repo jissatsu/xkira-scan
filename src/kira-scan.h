@@ -3,67 +3,58 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
 #include <errno.h>
 #include <signal.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <libnet.h>
+#include <getopt.h>
+#include "output.h"
+#include "inline.h"
+#include "xkira-scan-config.h"
+#include "xscan_sniffer.h"
+#include "net.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define MAXWAIT 10
-#define MAXKPACKET 4096
-
-// xscan error buffer
-char xscan_errbuf[0xFF];
-
 typedef enum { X_SYN, X_ICMP } scan_t;
-typedef enum { X_IP,  X_NM   } proto_t;
+typedef enum { XTYPE = 2, XPORT, XHOST } init_err_t;
 
-struct ports
+// kira-scan.h
+struct args
 {
-    uint16_t start;       /* start port */
-    uint16_t end;         /* end port (0 if no port range was specified) */
+    char *type;
+    char *host;
+    char *ports;
+    int verbose;
+}
+__attribute__((packed));
+
+// packet structure
+// kira-scan.h
+struct xp_packet
+{
+    struct icmp _icmp;   /* icmp header */
+    struct ip _ip;       /* ipv4 header */
+    struct tcphdr _tcp;  /* tcp  header */
 };
 
-struct host
-{
-    char *name;           /* hostname */
-    char *ip;             /* host ip */
-};
+short  __xscan_init__( struct args *args, struct xp_setup *setup );
+short  xscan_start_sniffer( struct xp_stats *stats );
+short  xscan_hostinfo( char *host, struct xp_setup *setup );
+short  xscan_set_ports( const char *p, struct ports *ports );
+short  xscan_validate_ports( struct ports *ports );
 
-struct xp_setup
-{
-    pid_t pid;            /* process id */
-    short type;           /* scan type (icmp or syn) */
-    short on;             /*  */
-    short is_tty;
-    short subnet;         /* subnet to scan */
-    uint16_t nhosts;      /* calculated hosts scan range from subnet */
-    uint32_t start;       /* start ip address (used only when subnet is set) */
-    struct ports _ports;  /* ports to scan */
-    struct host _host;    /* data associated with the host */
-}
-setup;
+void   __xscan_initiate__( struct xp_stats *stats, void (*shandler)(struct xp_stats *stats) );
+void   __End__( int sig );
 
-struct xp_stats
-{
-    uint16_t nrecv;       /* number of received replies */
-    uint16_t nsent;       /* number of packets sent */
-}
-stats;
-
-short   __xscan_init__( const char **argv, struct xp_setup *setup );
-short   xscan_hstr_format( char *host );
-short   xhost_info( char *host, struct xp_setup *setup );
-void    __diE__( int sig );
-void    xscan_init_packet( struct protoent *proto );
-
-uint16_t * x_ports( char *ports );
+struct args * xscan_parse_options( int argc, char **argv, void (*usage)(char *) );
 
 #ifdef __cplusplus
 }

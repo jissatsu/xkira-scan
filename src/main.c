@@ -1,43 +1,61 @@
 #include "kira-scan.h"
 
-void __usage( char *prog )
+static void __usage( char *prog )
 {
-    printf( "Usage: %s [scan type] [hostname/ip] [port or port-range]\n", prog );
+    printf( "Usage: %s\n", prog );
+    printf( "-t [Scan Type]\n" );
+    printf( "-d [Destination address]\n" );
+    printf( "-p [Port or Port range]\n" );
+    exit( 1 );
+}
+
+static void display_stats( struct xp_stats *stats )
+{
+    ;
 }
 
 int main( int argc, char **argv )
 {
-    struct protoent *proto;
+    short init;
+    struct xp_stats stats;
 
-    if ( argc != 4 ) {
-        __usage( argv[0] );
-    }
-
-    if ( __xscan_init__( (const char **) argv, &setup ) < 0 ){
-        printf( "%s\n", xscan_errbuf );
-        __usage( argv[0] );
-    }
-
-    stats.nrecv = 0;
-    stats.nsent = 0;
+    struct args *args = xscan_parse_options(
+        argc, argv, &__usage
+    );
     
-    switch ( setup.type ) {
-        case X_SYN:
-            proto = getprotobyname( "tcp" );
+    init = __xscan_init__( args, &setup );
+    switch ( init ) {
+        case XTYPE:
+        case XHOST:
+        case XPORT:
+            printf( "Xkira-scan initialization failed: %s\n", xscan_errbuf );
+            exit( 1 );
             break;
-        case X_ICMP:
-            proto = getprotobyname( "icmp" );
-            break;
+            
         default:
-            printf( "Scan modes available: --icmp or --syn" );
-            return -1;
+            break;
     }
 
-    xscan_init_packet( proto );
+    if ( xscan_start_sniffer( &stats ) < 0 ) {
+        printf( "Xkira-scan sniffer failure: %s\n", xscan_errbuf );
+        exit( 1 );
+    }
+    #ifdef DEBUG
+        printf( "[Debug]\n" );
+        printf( "%s: Spawned scan sniffer!\n\n", __FILE__ );
+    #endif
 
+    // `setup.on` means we are not performing a single scan
+    // we are either scanning a subnet or a single host on a port range
     if ( setup.on ) {
-        signal( SIGINT,  __diE__ );
-        signal( SIGTERM, __diE__ );
+        signal( SIGINT,  __End__ );
+        signal( SIGTERM, __End__ );
+        #ifdef DEBUG
+            printf( "[Debug]\n" );
+            printf( "%s: Registered signal handler!\n\n", __FILE__ );
+        #endif
     }
-    return 0;
+
+    __xscan_initiate__( &stats, &display_stats );
+    exit( 0 );
 }
