@@ -1,6 +1,10 @@
 #include "net.h"
 
-// notify the kernel about our ipv4 header
+/*
+ * Notify the kernel about our ipv4 header
+ * @param `int *sock` A pointer to a socket descriptor
+ * @param `int *hdrincl`
+*/
 void sockopt_hdrincl( int *sock, int *hdrincl )
 {
     int opt = 1;
@@ -14,11 +18,42 @@ void sockopt_hdrincl( int *sock, int *hdrincl )
     *hdrincl = (st == 0) ? 1 : 0 ;
 }
 
-short net_ip( char *dst )
+/*
+ * Get the ip address of a network interface
+ * @param `const char *iface` The network interface's name
+ * @param `char *dst` On success it gets assigned the ip address
+ * @return 0 (success) or -1 (error)
+*/
+short net_ip( const char *iface, char *dst )
 {
+    int sockfd;
+    struct ifreq req;
+    struct sockaddr_in *addr;
+
+    if ( (sockfd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
+        sprintf( 
+            xscan_errbuf, "%s", strerror( errno )
+        );
+        return -1;
+    }
+
+    strcpy( req.ifr_name, iface );
+    if ( ioctl( sockfd, SIOCGIFADDR, &req ) < 0 ) {
+        sprintf(
+            xscan_errbuf, "%s", strerror( errno )
+        );
+        return -1;
+    }
+
+    addr = (struct sockaddr_in *) &req.ifr_addr;
+    strcpy( dst, inet_ntoa( addr->sin_addr ) );
     return 0;
 }
 
+/* 
+ * check if the given string is an ip
+ * @param `const char *str` The string to check
+ */
 char * is_ip( const char *str )
 {
     int scan;

@@ -3,7 +3,8 @@
 static void __usage( char *prog )
 {
     printf( "Usage: %s\n", prog );
-    printf( "-t [Scan Type]\n" );
+    printf( "-i [Interface name]\n" );
+    printf( "-t [Scan type]\n" );
     printf( "-d [Destination address]\n" );
     printf( "-p [Port or Port range]\n" );
     exit( 1 );
@@ -24,21 +25,16 @@ int main( int argc, char **argv )
     );
     
     init = __xscan_init__( args, &setup );
-    switch ( init ) {
-        case XTYPE:
-        case XHOST:
-        case XPORT:
-            printf( "Xkira-scan initialization failed: %s\n", xscan_errbuf );
-            exit( 1 );
-            break;
-            
-        default:
-            break;
+    if ( init != 0 ) {
+        __die(
+            "Xkira-scan initialization failed: %s\n", xscan_errbuf
+        );
     }
 
     if ( xscan_start_sniffer( &stats ) < 0 ) {
-        printf( "Xkira-scan sniffer failure: %s\n", xscan_errbuf );
-        exit( 1 );
+        __die(
+            "Xkira-scan sniffer failure: %s\n", xscan_errbuf
+        );
     }
     #ifdef DEBUG
         printf( "[Debug]\n" );

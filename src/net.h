@@ -8,13 +8,15 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <errno.h>
+#include "xkira-scan-config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void  sockopt_hdrincl( int *sock, int *hdrincl );
-short net_ip( char *dst );
+short net_ip( const char *iface, char *dst );
 char * is_ip( const char *str );
 
 #ifdef __cplusplus

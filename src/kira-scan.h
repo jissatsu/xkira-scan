@@ -13,7 +13,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <getopt.h>
-#include "output.h"
+#include "output/output.h"
 #include "inline.h"
 #include "xkira-scan-config.h"
 #include "xscan_sniffer.h"
@@ -24,11 +24,11 @@ extern "C" {
 #endif
 
 typedef enum { X_SYN, X_ICMP } scan_t;
-typedef enum { XTYPE = 2, XPORT, XHOST } init_err_t;
 
 // kira-scan.h
 struct args
 {
+    char *iface;
     char *type;
     char *host;
     char *ports;
@@ -40,9 +40,9 @@ __attribute__((packed));
 // kira-scan.h
 struct xp_packet
 {
-    struct icmp _icmp;   /* icmp header */
-    struct ip _ip;       /* ipv4 header */
-    struct tcphdr _tcp;  /* tcp  header */
+    struct icmp *icmp;   /* icmp header */
+    struct ip *ip;       /* ipv4 header */
+    struct tcphdr *tcp;  /* tcp  header */
 };
 
 short  __xscan_init__( struct args *args, struct xp_setup *setup );
