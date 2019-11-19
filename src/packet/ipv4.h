@@ -8,7 +8,7 @@
 extern "C"{
 #endif
 
-short xscan_build_ipv4( int proto, const char *src_ip, const char *dst_ip, uint16_t cksum, char *sbuff );
+struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const char *dst_ip, uint16_t cksum, char *sbuff );
 
 #ifdef __cplusplus
 }

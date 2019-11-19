@@ -126,15 +126,19 @@ void __xscan_initiate__( struct xp_stats *stats,
     int sock;
     int hdrincl;
     char *prt = NULL;
-    char sbuff[4096];
+    char sbuff[400], rbuff[400];
     struct protoent *proto;
     struct xp_packet pkt;
+    struct sockaddr_in dst_addr;
 
-    sock = socket( AF_INET, SOCK_RAW, IPPROTO_RAW );
-    if ( sock < 0 ) {
+    if ( (sock = socket( AF_INET, SOCK_RAW, IPPROTO_RAW )) < 0 ) {
         perror( "Error: " );
         exit( 1 );
     }
+
+    dst_addr.sin_family      = AF_INET;
+    dst_addr.sin_port        = htons( 80 );
+    dst_addr.sin_addr.s_addr = inet_addr( "216.58.206.174" );
 
     sockopt_hdrincl( &sock, &hdrincl );
     stats->nrecv =   0;
@@ -145,15 +149,9 @@ void __xscan_initiate__( struct xp_stats *stats,
 
     switch ( setup.type ) {
         case X_ICMP:
-            if ( xscan_build_icmp( ICMP_ECHO, setup.pid, 0, sbuff ) < 0 ) {
-                __die( "%s", "Error building ICMP header!\n" );
-            }
             prt = "icmp";
             break;
         case X_SYN:
-            //if ( xscan_build_tcp( "syn", port, sbuff ) < 0 ) {
-            //    __die( "%s", "Error building TCP header!\n" );
-            //}
             prt = "tcp";
             break;
     }
@@ -161,9 +159,42 @@ void __xscan_initiate__( struct xp_stats *stats,
 
     // build ipv4 header if include-header option was set successfully
     if ( hdrincl ) {
-        if ( xscan_build_ipv4( proto->p_proto, setup.ip, setup._host.ip, 0, sbuff ) < 0 ) {
+        if ( !(pkt.ip = xscan_build_ipv4( proto->p_proto, setup.pid, setup.ip, setup._host.ip, 0, sbuff )) ) {
             __die( "%s", "Error building IPV4 header!\n" );
         }
+    }
+
+    if ( setup.type == X_ICMP ) {
+        if ( !(pkt.icmp = xscan_build_icmp( ICMP_ECHO, setup.pid, 0, sbuff )) ) {
+            __die( "%s", "Error building ICMP header!\n" );
+        }   
+    }
+
+    if ( setup.type == X_SYN ) {
+        //if ( !(pkt.tcp = xscan_build_tcp( (char *) {0, 0, 0, 0, 0, 0, 0, 1, 0}, rand_port, 80 sbuff )) ) {
+        //    __die( "%s", "Error building TCP header!\n" );
+        //}
+    }
+
+    /* printf( "ICMP TYPE  -> %d\n", pkt.icmp->icmp_type );
+    printf( "ICMP CODE  -> %d\n", pkt.icmp->icmp_code );
+    printf( "ICMP ID    -> %d\n", pkt.icmp->icmp_id );
+    printf( "ICMP SEQ   -> %d\n", pkt.icmp->icmp_seq );
+    printf( "ICMP CKSUM -> %d\n\n", pkt.icmp->icmp_cksum );
+
+    printf( "IPV4 IHL   -> %d\n", pkt.ip->ip_hl );
+    printf( "IPV4 VER   -> %d\n", pkt.ip->ip_v );
+    printf( "IPV4 TOS   -> %d\n", pkt.ip->ip_tos );
+    printf( "IPV4 LEN   -> %d\n", ntohs( pkt.ip->ip_len ) );
+    printf( "IPV4 ID    -> %d\n", ntohs( pkt.ip->ip_id ) );
+    printf( "IPV4 TTL   -> %d\n", pkt.ip->ip_ttl );
+    printf( "IPV4 PROTO -> %d\n", pkt.ip->ip_p );
+    printf( "IPV4 SUM   -> %d\n", pkt.ip->ip_sum );
+    // xscan_send_packet( pkt, setup._host.ip ); */
+
+    int nbytes;
+    if ( (nbytes = sendto( sock, sbuff, sizeof( sbuff ), 0, (struct sockaddr *) &dst_addr, sizeof( dst_addr ) )) ) {
+        printf( "%d\n", nbytes );
     }
     return;
 }

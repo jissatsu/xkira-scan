@@ -8,7 +8,7 @@
 extern "C"{
 #endif
 
-short xscan_build_icmp( uint16_t type, pid_t pid, uint16_t cksum, char *sbuff );
+struct icmp * xscan_build_icmp( uint16_t type, pid_t pid, uint16_t cksum, char *sbuff );
 
 #ifdef __cplusplus
 }

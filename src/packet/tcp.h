@@ -8,7 +8,7 @@
 extern "C"{
 #endif
 
-
+struct tcphdr * xscan_build_tcp( char *flags, uint32_t src_port, uint32_t dst_port, char *sbuff );
 
 #ifdef __cplusplus
 }
