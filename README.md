@@ -1,2 +1,2 @@
 # xkira-scan
-xkira-scan is a port scanning module
+xkira-scan is a SYN / ICMP scanning module
