@@ -14,6 +14,19 @@ extern "C" {
 // xkira-scan-config.h
 char xscan_errbuf[0xFF];
 
+typedef enum { X_SYN, X_ICMP } scan_t;
+
+// kira-scan.h
+struct args
+{
+    char *iface;
+    char *type;
+    char *host;
+    char *ports;
+    int verbose;
+}
+__attribute__((packed));
+
 struct ports
 {
     short range;          /* 1 if port range 0 otherwise */
@@ -38,8 +51,6 @@ struct xp_setup
     short on;             /* range scan (scan a subnet or multiple ports) */
     short tty;
     int verbose;          /* verbose mode */
-    uint16_t nhosts;      /* calculated hosts scan range from subnet */
-    uint32_t start;       /* start ip address (used only when subnet is set) */
     struct ports _ports;  /* ports to scan */
     struct host _host;    /* data associated with the host */
 }
@@ -48,9 +59,12 @@ __attribute__((packed)) setup;
 // xkira-scan-config.h
 struct xp_stats
 {
-    uint16_t nrecv;     /* number of received replies */
-    uint16_t nsent;     /* number of packets sent */
-    uint16_t tpkts;     /* total number of packets to send */
+    uint16_t nhosts;    /* calculated hosts scan range from subnet */
+    uint16_t nports;    /* total number of ports to scan */
+    uint32_t start;     /* start ip address (used only when subnet is set) */
+    uint32_t nrecv;     /* number of received replies */
+    uint32_t nsent;     /* number of packets sent */
+    uint32_t tpkts;     /* total number of packets to send */
     double time;        /* time it took to perform the scan */
 }
 __attribute__((packed));

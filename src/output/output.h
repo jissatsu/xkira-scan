@@ -13,7 +13,7 @@ extern "C"{
 
 short tty;
 
-typedef enum { NVVV, VERR, VINF, VWARN } vmsg_t;
+typedef enum { NVVV, VERR, VINF, VWARN, VDEBUG } vmsg_t;
 
 void  o_set_tty( short _tty );
 void  v_ch( char c );

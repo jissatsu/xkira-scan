@@ -18,27 +18,52 @@ static void display_stats( struct xp_stats *stats )
 int main( int argc, char **argv )
 {
     short init;
+    int opt;
+    struct args args;
     struct xp_stats stats;
-
-    struct args *args = xscan_parse_options(
-        argc, argv, &__usage
-    );
     
-    init = __xscan_init__( args, &setup );
+    args.host  = NULL;
+    args.iface = NULL;
+    args.ports = NULL;
+    args.type  = NULL;
+    args.verbose = 0;
+
+    while ( (opt = getopt( argc, argv, "i:t:d:p:v" )) != -1 ) {
+        switch ( opt ) {
+            case 't':
+                args.type  = optarg;
+                break;
+            case 'd':
+                args.host  = optarg;
+                break;
+            case 'p':
+                args.ports = optarg;
+                break;
+            case 'i':
+                args.iface = optarg;
+                break;
+            case 'v':
+                args.verbose = 1;
+                break;
+            default:
+                __usage( argv[0] );
+        }
+    }
+
+    if ( !args.host || !args.type || !args.iface ) {
+        __usage( argv[0] );
+    }
+    
+    init = __xscan_init__( &args, &stats, &setup );
     if ( init != 0 ) {
-        __die(
-            "Xkira-scan initialization failed: %s\n", xscan_errbuf
-        );
+        __die( "Xkira-scan initialization failed: %s\n", xscan_errbuf );
     }
 
     if ( xscan_start_sniffer( &stats ) < 0 ) {
-        __die(
-            "Xkira-scan sniffer failure: %s\n", xscan_errbuf
-        );
+        __die( "Xkira-scan sniffer failure: %s\n", xscan_errbuf );
     }
     #ifdef DEBUG
-        printf( "[Debug]\n" );
-        printf( "%s: Spawned scan sniffer!\n\n", __FILE__ );
+        v_out( VDEBUG, "%s: %s", __FILE__, "Spawned scan sniffer!\n" );
     #endif
 
     // `setup.on` means we are not performing a single scan
@@ -47,8 +72,7 @@ int main( int argc, char **argv )
         signal( SIGINT,  __End__ );
         signal( SIGTERM, __End__ );
         #ifdef DEBUG
-            printf( "[Debug]\n" );
-            printf( "%s: Registered signal handler!\n\n", __FILE__ );
+            v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
         #endif
     }
 

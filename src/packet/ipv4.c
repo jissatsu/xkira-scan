@@ -11,7 +11,7 @@ struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const ch
     ipv4->ip_v   = 4;
     ipv4->ip_tos = 0;
     ipv4->ip_len = htons( IPV4_H_SIZE + ICMP_SIZE );
-    ipv4->ip_id  = htons( 321 );
+    ipv4->ip_id  = htons( pid );
     ipv4->ip_off = 0;
     ipv4->ip_ttl = 255;
     ipv4->ip_p   = proto;
@@ -23,7 +23,7 @@ struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const ch
     ipv4->ip_src = src;
     ipv4->ip_dst = dst;
 
-    if ( !csum ) {
+    if ( csum < 0 ) {
         ipv4->ip_sum = k_cksum( (uint16_t *) ipv4, IPV4_H_SIZE );
     } else {
         ipv4->ip_sum = csum;

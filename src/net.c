@@ -18,6 +18,69 @@ void sockopt_hdrincl( int *sock, int *hdrincl )
     *hdrincl = (st == 0) ? 1 : 0 ;
 }
 
+/* Generate a random ip address */
+char * rand_addr( void )
+{
+    uint8_t addr[4];
+    time_t t;
+    static char rand_addr[30];
+
+    srand( (unsigned) time( &t ) );
+    addr[0] = rand() % 255;
+    addr[1] = rand() % 255;
+    addr[2] = rand() % 255;
+    addr[3] = rand() % 255;
+
+    sprintf( rand_addr, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3] );
+    return rand_addr;
+}
+
+uint32_t calc_nhosts( char *ip, short subnet )
+{
+    char mask[30];
+    uint32_t int_msk;
+    uint32_t nhosts;
+
+    if( MSK_FR_SUB( subnet, mask ) < 0 ){
+        return -1;
+    }
+    
+    int_msk = IP2LB( mask );
+    nhosts  = int_msk ^ 0xFFFFFFFF;
+    return nhosts;
+}
+
+/* calculate the start ip address based on the `ip` and `subnet` */
+uint32_t net_off( char *ip, short subnet )
+{
+    char mask[30];
+    uint32_t int_ip, int_msk;
+    uint32_t off = 0;
+
+    if( MSK_FR_SUB( subnet, mask ) < 0 ){
+        return -1;
+    }
+
+    int_ip  = IP2LB( ip );
+    int_msk = IP2LB( mask );
+    off     = int_ip & int_msk;
+    return off;
+}
+
+/* Create an address structure of type `struct sockaddr_in` */
+struct sockaddr_in net_sockaddr( uint16_t family, uint16_t port, char *addr )
+{
+    struct sockaddr_in sock_addr;
+
+    if ( port < 1 || port > 65535 ) {
+        port = 80;
+    }
+    sock_addr.sin_family      = family;
+    sock_addr.sin_port        = htons( port );
+    sock_addr.sin_addr.s_addr = inet_addr( ( !addr ) ? rand_addr() : addr  );
+    return sock_addr;
+}
+
 /*
  * Get the ip address of a network interface
  * @param `const char *iface` The network interface's name
