@@ -22,7 +22,7 @@ char * is_ip( const char *str );
 char * rand_addr( void );
 
 uint32_t net_off( char *ip, short subnet );
-uint32_t calc_nhosts( char *ip, short subnet );
+uint32_t calc_nhosts( short subnet );
 
 struct sockaddr_in net_sockaddr( uint16_t family, uint16_t port, char *addr );
 

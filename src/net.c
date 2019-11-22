@@ -35,7 +35,7 @@ char * rand_addr( void )
     return rand_addr;
 }
 
-uint32_t calc_nhosts( char *ip, short subnet )
+uint32_t calc_nhosts( short subnet )
 {
     char mask[30];
     uint32_t int_msk;

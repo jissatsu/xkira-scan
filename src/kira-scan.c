@@ -1,16 +1,9 @@
 #include "kira-scan.h"
 
-void __xscan_initiate__( struct xp_stats *stats,
-                         void (*shandler)(struct xp_stats *stats) )
+void __xscan_initiate__( struct xp_stats *stats )
 {
     int sock;
     int hdrincl;
-    int nbytes;
-    int proto;
-    char sbuff[400];
-    char *dst_ip;
-    struct xp_packet *pkt;
-    struct sockaddr_in dst_addr;
 
     if ( (sock = socket( AF_INET, SOCK_RAW, IPPROTO_RAW )) < 0 ) {
         __die( "%s", strerror( errno ) );
@@ -24,37 +17,96 @@ void __xscan_initiate__( struct xp_stats *stats,
             v_out( VDEBUG, "%s: %s", __FILE__, "IP_HDRINCL failure!\n" );
     #endif
 
-    memset( sbuff, '\0', sizeof( sbuff ) );
-    switch ( setup.type ) {
-        case X_ICMP:
-            proto = IPPROTO_ICMP;
-            break;
-        case X_SYN:
-            proto = IPPROTO_TCP;
-            break;
-    }
-
-    if ( !setup._host.subnet ) {
-        dst_ip = setup._host.ip;
-    } else {
-        stats->start  = net_off( setup._host.ip, setup._host.subnet );
-        stats->nhosts = calc_nhosts( setup._host.ip, setup._host.subnet );
-    }
-
-    stats->tpkts = 0;// number of hosts (number of ip addresses to scan) + number of ports
-
-    for ( uint32_t i = 0 ; i < stats->tpkts ; i++ ) {
-        if ( (pkt = xscan_init_packet( proto, setup.ip, dst_ip, &setup._ports, sbuff )) == NULL ) {
-            __die( "%s", "Packet initialization error!\n" );
+    if ( setup.type == X_ICMP ) {
+        if ( xscan_icmp( &sock, &setup._host, stats ) < 0 ) {
+            __die( "%s", xscan_errbuf );
         }
-        //if ( xscan_send_packet( sbuff ) ) {
-        //    stats->nsent++;
-        //}
+    }
+
+    if( setup.type == X_SYN ) {
+        if ( xscan_syn( &sock, &setup._host, &setup._ports, stats ) < 0 ) {
+            __die( "%s", xscan_errbuf );
+        }
     }
     return;
 }
 
-/* Initialize the packet base on the protocol */
+/* perform icmp scan */
+short xscan_icmp( int *sock, struct host *host, struct xp_stats *stats )
+{
+    char sbuff[400];
+    char dst_ip[30];
+    struct xp_packet *pkt;
+
+    memset( sbuff, '\0', sizeof( sbuff ) );
+
+    if ( host->subnet ) {
+        stats->scan_ip = net_off( host->ip, host->subnet ); /* start ip address e.g 192.168.0.1 */
+        stats->nhosts  = calc_nhosts( host->subnet );
+        stats->scan_ip++;
+    } else {
+        stats->nhosts  = 1;
+        stats->scan_ip = IP2LB( host->ip );
+    }
+    stats->tpkts = stats->nhosts;
+    #ifdef DEBUG
+        v_out( VDEBUG, "%s - xscan_icmp(): Total hosts   -> %d\n", __FILE__, stats->nhosts );
+        v_out( VDEBUG, "%s - xscan_icmp(): Total packets -> %d\n", __FILE__, stats->tpkts );
+    #endif
+
+    for ( uint32_t i = 0 ; i < stats->tpkts ; i++ )
+    {
+        LB2IP( stats->scan_ip, dst_ip );
+        if ( (pkt = xscan_init_packet( IPPROTO_ICMP, setup.ip, dst_ip, NULL, sbuff )) == NULL ) {
+            sprintf(
+                xscan_errbuf,
+                "Packet initialization error!\n"
+            );
+            return -1;
+        }
+        if ( xscan_send_packet( sock, (const void *) sbuff, sizeof( sbuff ) ) < 0 ) {
+            sprintf(
+                xscan_errbuf,
+                "Error sending packet!\n"
+            );
+            return -1;
+        }
+        stats->nsent++;
+        printf( "%d\n", stats->nsent );
+        stats->scan_ip += ( stats->nhosts > 1 ) ? 1 : 0 ;
+        mssleep( 0.3 );
+    }
+    return 0;
+}
+
+/* perform syn scan */
+short xscan_syn( int *sock, struct host *host, struct ports *ports, struct xp_stats *stats )
+{
+    char sbuff[400];
+    char dst_ip[30];
+    struct xp_packet *pkt;
+
+    memset( sbuff, '\0', sizeof( sbuff ) );
+
+    if ( host->subnet ) {
+        stats->scan_ip = net_off( host->ip, host->subnet ); /* start ip address e.g 192.168.0.1 */
+        stats->nhosts  = calc_nhosts( host->subnet );
+        stats->scan_ip++;
+    } else {
+        stats->nhosts  = 1;
+        stats->scan_ip = IP2LB( host->ip );
+    }
+
+    if ( (pkt = xscan_init_packet( IPPROTO_TCP, setup.ip, dst_ip, &setup._ports, sbuff )) == NULL ) {
+        __die( "%s", "Packet initialization error!\n" );
+    }
+    if ( xscan_send_packet( sock, (const void *) sbuff, sizeof( sbuff ) ) == 0 ) {
+        stats->nsent++;
+    }
+    return 0;
+}
+
+/* Initialize the packet based on the protocol */
 struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, struct ports *ports, char *sbuff )
 {
     pid_t pid;
@@ -62,7 +114,7 @@ struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, str
 
     pid = setup.pid;
     if ( proto == IPPROTO_ICMP ){
-        if( (pkt.icmp = xscan_build_icmp( ICMP_ECHO, pid, -1, sbuff )) == NULL ){
+        if( (pkt.icmp = xscan_build_icmp( ICMP_ECHO, pid, sbuff )) == NULL ){
             return NULL;
         }
     }
@@ -73,11 +125,25 @@ struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, str
         //}
     }
     
-    if ( (pkt.ip = xscan_build_ipv4( proto, pid, src_ip, dst_ip, -1, sbuff)) == NULL ) {
+    if ( (pkt.ip = xscan_build_ipv4( proto, pid, src_ip, dst_ip, sbuff)) == NULL ) {
         return NULL;
     }
-    printf( "%s - %s\n", src_ip, dst_ip );
     return &pkt;
+}
+
+/* send the packet */
+short xscan_send_packet( int *sock, const void *buff, size_t size )
+{
+    int nbytes;
+    struct sockaddr_in dst_addr;
+    
+    memset( &dst_addr, '\0', sizeof( dst_addr ) );
+    // using random socket address here since we are building the ipv4 header
+    dst_addr = net_sockaddr( AF_INET, 0, NULL );
+    nbytes   = sendto(
+        *sock, buff, size, 0, (struct sockaddr *) &dst_addr, sizeof( dst_addr )
+    );
+    return (nbytes < 0) ? -1 : 0 ;
 }
 
 // start the scan sniffer thread

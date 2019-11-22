@@ -1,6 +1,6 @@
 #include "ipv4.h"
 
-struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const char *dst_ip, uint16_t csum, char *sbuff )
+struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const char *dst_ip, char *sbuff )
 {
     struct in_addr src, dst;
     static struct ip *ipv4;
@@ -22,12 +22,7 @@ struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const ch
 
     ipv4->ip_src = src;
     ipv4->ip_dst = dst;
-
-    if ( csum < 0 ) {
-        ipv4->ip_sum = k_cksum( (uint16_t *) ipv4, IPV4_H_SIZE );
-    } else {
-        ipv4->ip_sum = csum;
-    }
+    ipv4->ip_sum = k_cksum( (uint16_t *) ipv4, IPV4_H_SIZE );
 
     return ipv4;
 }

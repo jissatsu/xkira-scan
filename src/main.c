@@ -10,11 +10,6 @@ static void __usage( char *prog )
     exit( 1 );
 }
 
-static void display_stats( struct xp_stats *stats )
-{
-    ;
-}
-
 int main( int argc, char **argv )
 {
     short init;
@@ -69,13 +64,13 @@ int main( int argc, char **argv )
     // `setup.on` means we are not performing a single scan
     // we are either scanning a subnet or a single host on a port range
     if ( setup.on ) {
-        signal( SIGINT,  __End__ );
-        signal( SIGTERM, __End__ );
+        //signal( SIGINT,  __End__ );
+        //signal( SIGTERM, __End__ );
         #ifdef DEBUG
             v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
         #endif
     }
 
-    __xscan_initiate__( &stats, &display_stats );
+    __xscan_initiate__( &stats );
     exit( 0 );
 }

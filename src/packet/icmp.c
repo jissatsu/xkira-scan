@@ -1,6 +1,6 @@
 #include "icmp.h"
 
-struct icmp * xscan_build_icmp( uint16_t type, pid_t pid, uint16_t csum, char *sbuff )
+struct icmp * xscan_build_icmp( uint16_t type, pid_t pid, char *sbuff )
 {
     static uint16_t seq = 0;
     static struct icmp *icmp;
@@ -13,10 +13,7 @@ struct icmp * xscan_build_icmp( uint16_t type, pid_t pid, uint16_t csum, char *s
     icmp->icmp_seq   = seq++;
     icmp->icmp_cksum = 0;
 
-    if ( csum < 0 ) {
-        icmp->icmp_cksum = k_cksum( (uint16_t *) &sbuff[IPV4_H_SIZE], ICMP_SIZE );
-    } else {
-        icmp->icmp_cksum = csum;
-    }
+    icmp->icmp_cksum = k_cksum( (uint16_t *) &sbuff[IPV4_H_SIZE], ICMP_SIZE );
+    
     return icmp;
 }

@@ -61,7 +61,7 @@ struct xp_stats
 {
     uint16_t nhosts;    /* calculated hosts scan range from subnet */
     uint16_t nports;    /* total number of ports to scan */
-    uint32_t start;     /* start ip address (used only when subnet is set) */
+    uint32_t scan_ip;   /* next ip address to scan */
     uint32_t nrecv;     /* number of received replies */
     uint32_t nsent;     /* number of packets sent */
     uint32_t tpkts;     /* total number of packets to send */

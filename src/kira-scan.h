@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include "xscan_sniffer.h"
 #include "init.h"
+#include "sleep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +25,10 @@ struct xp_packet
 };
 
 short  xscan_start_sniffer( struct xp_stats *stats );
-void   __xscan_initiate__( struct xp_stats *stats, void (*shandler)(struct xp_stats *stats) );
+short  xscan_send_packet( int *sock, const void *buff, size_t size );
+short  xscan_icmp( int *sock, struct host *host, struct xp_stats *stats );
+short  xscan_syn( int *sock, struct host *host, struct ports *ports, struct xp_stats *stats );
+void   __xscan_initiate__( struct xp_stats *stats );
 void   __End__( int sig );
 
 struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, struct ports *ports, char *sbuff );
