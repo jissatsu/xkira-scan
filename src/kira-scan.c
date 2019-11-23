@@ -71,15 +71,63 @@ short xscan_send_packet( int *sock, const void *buff, size_t size )
     return (nbytes < 0) ? -1 : 0 ;
 }
 
+
+short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_ip, char *dst_ip )
+{
+    short proto;
+    short dd;
+    char sbuff[400];
+    uint16_t src_port, dst_port;
+    struct xp_packet *pkt;
+    
+    memset( sbuff, '\0', sizeof( sbuff ) );
+    switch ( setup.type )
+    {
+        case X_SYN:
+        	src_port = rand() % 8000;
+            dst_port = setup._ports.start;
+        	proto    = IPPROTO_TCP;
+			break;
+
+		case X_ICMP:
+        	src_port = 0;
+            dst_port = 0;
+        	proto    = IPPROTO_ICMP;
+			break;
+	}
+    dd = (stats->nports > 1) ? 1 : 0 ;
+
+    for ( uint32_t i = 0 ; i < stats->nports + dd ; i++ )
+    {
+        if ( (pkt = xscan_init_packet( proto, src_ip, dst_ip, src_port, dst_port, sbuff )) == NULL ) {
+            sprintf(
+                xscan_errbuf,
+                "%s", "Packet initialization error!\n"
+            );
+            return -1;
+        }
+        
+        if ( xscan_send_packet( sock, (const void *) sbuff, sizeof( sbuff ) ) < 0 ) {
+            sprintf(
+                xscan_errbuf,
+                "%s", "Error sending packet!\n"
+            );
+            return -1;
+        }
+
+        if ( stats->nports > 1 ) {
+            dst_port++;
+        }
+        mssleep( 0.3 );
+    }
+    return 0;
+}
+
 void __xscan_initiate__( struct xp_stats *stats )
 {
     int sock;
     int hdrincl;
-    int proto;
-    int dd;
-    char sbuff[400], dst_ip[30];
-    uint16_t src_port, dst_port;
-    struct xp_packet *pkt;
+    char dst_ip[30];
 
     if ( (sock = socket( AF_INET, SOCK_RAW, IPPROTO_RAW )) < 0 ) {
         __die( "%s", strerror( errno ) );
@@ -93,53 +141,21 @@ void __xscan_initiate__( struct xp_stats *stats )
             v_out( VDEBUG, "%s: %s", __FILE__, "IP_HDRINCL failure!\n" );
     #endif
 
-    memset( sbuff, '\0', sizeof( sbuff ) );
     __init_stats__( stats );
-
     #ifdef DEBUG
         v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
         v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
         v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
     #endif
 
-	switch ( setup.type ) {
-        case X_SYN:
-        	src_port = rand() % 8000;
-            dst_port = setup._ports.start;
-        	proto    = IPPROTO_TCP;
-			break;
-
-		case X_ICMP:
-        	src_port = 0;
-            dst_port = 0;
-        	proto    = IPPROTO_ICMP;
-			break;
-	}
-
-    if ( stats->nports > 1 ) {
-        dd = 1;
-    } else {
-        dd = 0;
-    }
-
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
-        LB2IP( stats->scan_ip, dst_ip );   
-        for ( uint32_t j = 0 ; j < stats->nports + dd ; j++ )
-        {
-            if ( (pkt = xscan_init_packet( proto, setup.ip, dst_ip, src_port, dst_port, sbuff )) == NULL ) {
-                __die( "%s", "Packet initialization error!\n" );
-            }
-            
-            if ( xscan_send_packet( &sock, (const void *) sbuff, sizeof( sbuff ) ) < 0 ) {
-                __die( "%s", "Error sending packet!\n" );
-            }
-            dst_port = (stats->nports > 1) ? dst_port + 1 : dst_port ;
-            stats->nsent++;
-            mssleep( 0.3 );
+        LB2IP( stats->scan_ip, dst_ip );
+        if ( xscan_scan_host( &sock, setup.type, stats, setup.ip, dst_ip ) < 0 ) {
+            __die( "%s", xscan_errbuf );
         }
+        stats->nsent++;
         stats->scan_ip++;
-        dst_port = setup._ports.start;
     }
 }
 
