@@ -148,29 +148,6 @@ void __xscan_initiate__( struct xp_stats *stats )
         v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
     #endif
 
-<<<<<<< HEAD
-=======
-    switch ( setup.type ) {
-        case X_SYN:
-        	src_port = rand() % 8000;
-            	dst_port = setup._ports.start;
-        	proto    = IPPROTO_TCP;
-		break;
-
-	case X_ICMP:
-        	src_port = 0;
-            	dst_port = 0;
-        	proto    = IPPROTO_ICMP;
-		break;
-    }
-
-    if ( stats->nports > 1 ) {
-        dd = 1;
-    } else {
-        dd = 0;
-    }
-
->>>>>>> dc827626c3ae5ccabc8fdf7990dc161301190d61
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
         LB2IP( stats->scan_ip, dst_ip );
