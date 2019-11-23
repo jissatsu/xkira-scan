@@ -102,7 +102,7 @@ void __xscan_initiate__( struct xp_stats *stats )
         v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
     #endif
 
-	switch ( setup.type ) {
+    switch ( setup.type ) {
         case X_SYN:
         	src_port = rand() % 8000;
             	dst_port = setup._ports.start;
@@ -114,7 +114,7 @@ void __xscan_initiate__( struct xp_stats *stats )
             	dst_port = 0;
         	proto    = IPPROTO_ICMP;
 		break;
-	}
+    }
 
     if ( stats->nports > 1 ) {
         dd = 1;
