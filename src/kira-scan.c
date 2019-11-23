@@ -12,18 +12,12 @@ struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, uin
             if( (pkt.icmp = xscan_build_icmp( ICMP_ECHO, pid, sbuff )) == NULL ){
                 return NULL;
             }
-            printf( "Dst host -> %s\n", dst_ip );
-            printf( "Src port -> %d\n", sport );
-            printf( "Dst port -> %d\n\n", dport );
             break;
         case IPPROTO_TCP:
-            /* tcp_flags.syn = 1;
+            tcp_flags.syn = 1;
             if ( (pkt.tcp = xscan_build_tcp( tcp_flags, sport, dport, sbuff )) == NULL ) {
                 return NULL;
-            } */
-            printf( "Dst host -> %s\n", dst_ip );
-            printf( "Src port -> %d\n", sport );
-            printf( "Dst port -> %d\n\n", dport );
+            }
             break;
     }
     if ( (pkt.ip = xscan_build_ipv4( proto, pid, src_ip, dst_ip, sbuff)) == NULL ) {
@@ -71,7 +65,6 @@ short xscan_send_packet( int *sock, const void *buff, size_t size )
     return (nbytes < 0) ? -1 : 0 ;
 }
 
-
 short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_ip, char *dst_ip )
 {
     short proto;
@@ -110,7 +103,7 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
         if ( xscan_send_packet( sock, (const void *) sbuff, sizeof( sbuff ) ) < 0 ) {
             sprintf(
                 xscan_errbuf,
-                "%s", "Error sending packet!\n"
+                "%s\n", strerror( errno )
             );
             return -1;
         }

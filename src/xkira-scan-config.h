@@ -16,7 +16,7 @@ char xscan_errbuf[0xFF];
 
 typedef enum { X_SYN, X_ICMP } scan_t;
 
-// kira-scan.h
+// xkira-scan-config.h
 struct args
 {
     char *iface;
