@@ -77,17 +77,17 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
     switch ( setup.type )
     {
         case X_SYN:
-        	src_port = rand() % 8000;
+            src_port = rand() % 8000;
             dst_port = setup._ports.start;
-        	proto    = IPPROTO_TCP;
-			break;
+            proto    = IPPROTO_TCP;
+	    break;
 
-		case X_ICMP:
-        	src_port = 0;
+	case X_ICMP:
+            src_port = 0;
             dst_port = 0;
-        	proto    = IPPROTO_ICMP;
-			break;
-	}
+            proto    = IPPROTO_ICMP;
+	    break;
+    }
     dd = (stats->nports > 1) ? 1 : 0 ;
 
     for ( uint32_t i = 0 ; i < stats->nports + dd ; i++ )
