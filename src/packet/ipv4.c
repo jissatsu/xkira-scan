@@ -23,6 +23,5 @@ struct ip * xscan_build_ipv4( int proto, pid_t pid, const char *src_ip, const ch
     ipv4->ip_src = src;
     ipv4->ip_dst = dst;
     ipv4->ip_sum = k_cksum( (uint16_t *) ipv4, IPV4_H_SIZE );
-
     return ipv4;
 }

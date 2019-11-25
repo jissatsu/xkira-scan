@@ -83,34 +83,100 @@ struct sockaddr_in net_sockaddr( uint16_t family, uint16_t port, char *addr )
 
 /*
  * Get the ip address of a network interface
- * @param `const char *iface` The network interface's name
- * @param `char *dst` On success it gets assigned the ip address
+ * @param `char *iface` This is where the device's name is stored
+ * @param `char *dst` This is where the device's ip address is stored
  * @return 0 (success) or -1 (error)
 */
-short net_ip( const char *iface, char *dst )
+short net_ip( char *iface, char *dst )
 {
-    int sockfd;
-    struct ifreq req;
+    int num;
+    short flags;
+    struct ifreq *req;
     struct sockaddr_in *addr;
 
-    if ( (sockfd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
-        sprintf( 
-            xscan_errbuf, "%s", strerror( errno )
+    req = IF_LIST( &num );
+    if ( !req ) {
+        return -1;
+    }
+    
+    if ( num <= 0 ) {
+        sprintf(
+            xscan_errbuf, "%s", "No devices found!"
         );
         return -1;
     }
 
-    strcpy( req.ifr_name, iface );
-    if ( ioctl( sockfd, SIOCGIFADDR, &req ) < 0 ) {
+    for ( int i = 0 ; i < num ; i++ )
+    {
+        flags = IF_FLAGS( req->ifr_name );
+        if ( flags == -1 ) {
+            return -1;
+        }
+        // get the first active device that is not a loopback
+        if ( flags & IFF_RUNNING && !(flags & IFF_LOOPBACK) )
+        {
+            strcpy( iface, req->ifr_name );
+            addr = (struct sockaddr_in *) &req->ifr_addr;
+            strcpy( dst, inet_ntoa( addr->sin_addr ) );
+            return 0;
+        }
+        req++;
+    }
+    return -1;
+}
+
+/* Retreive a list of available interfaces */
+struct ifreq * IF_LIST( int *num )
+{
+    int sockfd;
+    struct ifconf iconf;
+    static struct ifreq req[64];
+
+    if ( (sockfd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
+        sprintf(
+            xscan_errbuf, "%s", strerror( errno )
+        );
+        return NULL;
+    }
+
+    iconf.ifc_len = sizeof( req );
+    iconf.ifc_req = req;
+    if ( ioctl( sockfd, SIOCGIFCONF, &iconf ) < 0 ) {
+        sprintf(
+            xscan_errbuf, "%s", strerror( errno )
+        );
+        close( sockfd );
+        return NULL;
+    }
+    
+    for ( int i = 1 ; strlen( req[i - 1].ifr_name ) > 0 ; i++ ) {
+        *num = i;
+    }
+    close( sockfd );
+    return req;
+}
+
+// Get the active flag word of the device
+short IF_FLAGS( char *iface )
+{
+    int sockfd;
+    struct ifreq req;
+    
+    if ( (sockfd = socket( AF_INET, SOCK_STREAM, 0 )) < 0 ) {
         sprintf(
             xscan_errbuf, "%s", strerror( errno )
         );
         return -1;
     }
 
-    addr = (struct sockaddr_in *) &req.ifr_addr;
-    strcpy( dst, inet_ntoa( addr->sin_addr ) );
-    return 0;
+    strcpy( req.ifr_name, iface );
+    if ( ioctl( sockfd, SIOCGIFFLAGS, &req ) < 0 ) {
+        sprintf(
+            xscan_errbuf, "%s", strerror( errno )
+        );
+        return -1;
+    }
+    return req.ifr_flags;
 }
 
 /* 

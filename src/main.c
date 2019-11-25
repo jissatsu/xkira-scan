@@ -3,7 +3,6 @@
 static void __usage( char *prog )
 {
     printf( "Usage: %s\n", prog );
-    printf( "-i [Interface name]\n" );
     printf( "-t [Scan type]\n" );
     printf( "-d [Destination address]\n" );
     printf( "-p [Port or Port range]\n" );
@@ -18,12 +17,11 @@ int main( int argc, char **argv )
     struct xp_stats stats;
     
     args.host  = NULL;
-    args.iface = NULL;
     args.ports = NULL;
     args.type  = NULL;
     args.verbose = 0;
 
-    while ( (opt = getopt( argc, argv, "i:t:d:p:v" )) != -1 ) {
+    while ( (opt = getopt( argc, argv, "t:d:p:v" )) != -1 ) {
         switch ( opt ) {
             case 't':
                 args.type  = optarg;
@@ -34,9 +32,6 @@ int main( int argc, char **argv )
             case 'p':
                 args.ports = optarg;
                 break;
-            case 'i':
-                args.iface = optarg;
-                break;
             case 'v':
                 args.verbose = 1;
                 break;
@@ -45,7 +40,7 @@ int main( int argc, char **argv )
         }
     }
 
-    if ( !args.host || !args.type || !args.iface ) {
+    if ( !args.host || !args.type ) {
         __usage( argv[0] );
     }
     

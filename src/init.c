@@ -64,7 +64,8 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
         return -1;
     }
 
-    if ( net_ip( args->iface, setup->ip ) < 0 ) {
+    // get the ip and name of the first active device
+    if ( net_ip( setup->iface, setup->ip ) < 0 ) {
         return -1;
     }
 
@@ -76,11 +77,12 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
         setup->on = 1;
     }
     #ifdef DEBUG
-        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->type", setup->type );
-        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->on",   setup->on );
-        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host name",   setup->_host.name );
-        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host ip",     setup->_host.ip );
-        v_out( VDEBUG, "%s: %s -> %s\n\n", __FILE__, "Our ip",      setup->ip );
+        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->type",   setup->type );
+        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->on",     setup->on );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host name",     setup->_host.name );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host ip",       setup->_host.ip );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Our ip",        setup->ip );
+        v_out( VDEBUG, "%s: %s -> %s\n\n", __FILE__, "Our interface", setup->iface );
     #endif
     return 0;
 }

@@ -10,19 +10,18 @@ extern "C"{
 
 struct tcp_flags
 {
-    uint8_t ns:2;
-    uint8_t cwr:2;
-    uint8_t ece:2;
-    uint8_t urg:2;
-    uint8_t ack:2;
-    uint8_t psh:2;
-    uint8_t rst:2;
-    uint8_t syn:2;
-    uint8_t fin:2;
-}
-tcp_flags;
+    uint8_t ns:1;
+    uint8_t cwr:1;
+    uint8_t ece:1;
+    uint8_t urg:1;
+    uint8_t ack:1;
+    uint8_t psh:1;
+    uint8_t rst:1;
+    uint8_t syn:1;
+    uint8_t fin:1;
+};
 
-struct tcphdr * xscan_build_tcp( struct tcp_flags flags, uint32_t src_port, uint32_t dst_port, char *sbuff );
+struct tcphdr * xscan_build_tcp( struct tcp_flags flags, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, char *data, char *sbuff );
 
 #ifdef __cplusplus
 }

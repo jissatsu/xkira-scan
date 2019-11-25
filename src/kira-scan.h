@@ -24,7 +24,7 @@ struct xp_packet
     struct tcphdr *tcp;  /* tcp  header */
 };
 
-short  xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_ip, char *dst_ip );
+short  xscan_scan_host( int *sock, struct xp_stats *stats, char *src_ip, char *dst_ip );
 short  xscan_start_sniffer( struct xp_stats *stats );
 short  xscan_send_packet( int *sock, const void *buff, size_t size );
 short  xscan_icmp( int *sock, struct host *host, struct xp_stats *stats );

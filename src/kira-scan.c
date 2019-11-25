@@ -4,9 +4,15 @@
 struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport, uint16_t dport, char *sbuff )
 {
     pid_t pid;
+    struct tcp_flags flags;
     static struct xp_packet pkt;
 
     pid = setup.pid;
+    memset( &flags, 0, sizeof( flags ) );
+
+    if ( (pkt.ip = xscan_build_ipv4( proto, pid, src_ip, dst_ip, sbuff)) == NULL ) {
+        return NULL;
+    }
     switch ( proto ) {
         case IPPROTO_ICMP:
             if( (pkt.icmp = xscan_build_icmp( ICMP_ECHO, pid, sbuff )) == NULL ){
@@ -14,14 +20,11 @@ struct xp_packet * xscan_init_packet( int proto, char *src_ip, char *dst_ip, uin
             }
             break;
         case IPPROTO_TCP:
-            tcp_flags.syn = 1;
-            if ( (pkt.tcp = xscan_build_tcp( tcp_flags, sport, dport, sbuff )) == NULL ) {
+            flags.syn = 1;
+            if ( (pkt.tcp = xscan_build_tcp( flags, src_ip, dst_ip, sport, dport, NULL, sbuff )) == NULL ) {
                 return NULL;
             }
             break;
-    }
-    if ( (pkt.ip = xscan_build_ipv4( proto, pid, src_ip, dst_ip, sbuff)) == NULL ) {
-        return NULL;
     }
     return &pkt;
 }
@@ -39,14 +42,22 @@ void __init_stats__( struct xp_stats *stats )
     }
 
     // calculate number of ports to scan
-    if ( setup._ports.range ) {
-        stats->nports = setup._ports.end - setup._ports.start;
-    } else {
-        stats->nports = 1;
+    if ( setup.type == X_SYN ) {
+        if ( setup._ports.range ) {
+            stats->nports = setup._ports.end - setup._ports.start;
+        } else {
+            stats->nports = 1;
+        }
+        // total number of packets
+        stats->tpkts = stats->nhosts * stats->nports;
     }
     
-    // total number of packets
-    stats->tpkts = stats->nhosts * stats->nports;
+    // no ports
+    if ( setup.type == X_ICMP ) {
+        stats->nports = 0;
+        // total number of packets
+        stats->tpkts  = stats->nhosts * 1;
+    }
     return ;
 }
 
@@ -65,7 +76,7 @@ short xscan_send_packet( int *sock, const void *buff, size_t size )
     return (nbytes < 0) ? -1 : 0 ;
 }
 
-short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_ip, char *dst_ip )
+short xscan_scan_host( int *sock, struct xp_stats *stats, char *src_ip, char *dst_ip )
 {
     short proto;
     short dd;
@@ -74,8 +85,7 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
     struct xp_packet *pkt;
     
     memset( sbuff, '\0', sizeof( sbuff ) );
-    switch ( setup.type )
-    {
+    switch ( setup.type ) {
         case X_SYN:
             src_port = rand() % 8000;
             dst_port = setup._ports.start;
@@ -88,7 +98,7 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
             proto    = IPPROTO_ICMP;
 	    break;
     }
-    dd = (stats->nports > 1) ? 1 : 0 ;
+    dd = (stats->nports > 1 || stats->nports < 1) ? 1 : 0 ;
 
     for ( uint32_t i = 0 ; i < stats->nports + dd ; i++ )
     {
@@ -100,7 +110,7 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
             return -1;
         }
         
-        if ( xscan_send_packet( sock, (const void *) sbuff, sizeof( sbuff ) ) < 0 ) {
+        if ( xscan_send_packet( sock, sbuff, sizeof( sbuff ) ) < 0 ) {
             sprintf(
                 xscan_errbuf,
                 "%s\n", strerror( errno )
@@ -111,6 +121,7 @@ short xscan_scan_host( int *sock, short type, struct xp_stats *stats, char *src_
         if ( stats->nports > 1 ) {
             dst_port++;
         }
+        stats->nsent++;
         mssleep( 0.3 );
     }
     return 0;
@@ -144,10 +155,9 @@ void __xscan_initiate__( struct xp_stats *stats )
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
         LB2IP( stats->scan_ip, dst_ip );
-        if ( xscan_scan_host( &sock, setup.type, stats, setup.ip, dst_ip ) < 0 ) {
+        if ( xscan_scan_host( &sock, stats, setup.ip, dst_ip ) < 0 ) {
             __die( "%s", xscan_errbuf );
         }
-        stats->nsent++;
         stats->scan_ip++;
     }
 }
