@@ -69,6 +69,16 @@ struct xp_stats
 }
 __attribute__((packed));
 
+// packet structure
+// xkira-scan-config.h
+struct xp_packet
+{
+    struct icmp icmp;   /* icmp header */
+    struct ip ip;       /* ipv4 header */
+    struct tcphdr tcp;  /* tcp  header */
+}
+xp_pkt;
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,23 +5,23 @@ struct tcphdr * xscan_build_tcp( struct tcp_flags flags, char *src_ip, char *dst
     char *pseudobuff;
     char databuff[10];
     static struct tcphdr *tcp;
-    struct pseudo_hdr *pshdr;
+    struct pseudo_hdr pshdr;
 
     tcp = (struct tcphdr *) &sbuff[IPV4_H_SIZE];
-    tcp->source  = htons( src_port );
-    tcp->dest    = htons( dst_port );
-    tcp->seq     = 0;
-    tcp->ack_seq = 0;
-    tcp->doff    = 5;
-    tcp->fin     = flags.fin;
-	tcp->syn     = flags.syn;
-	tcp->rst     = flags.rst;
-	tcp->psh     = flags.psh;
-	tcp->ack     = flags.ack;
-	tcp->urg     = flags.urg;
-    tcp->window  = htons( 155 );
-    tcp->check   = htons( 0x3fc1 );
-    tcp->urg_ptr = 0;
+    tcp->source = htons (1234);
+	tcp->dest = htons (80);
+	tcp->seq = 0;
+	tcp->ack_seq = 0;
+	tcp->doff = 5;	//tcp header size
+	tcp->fin=0;
+	tcp->syn=1;
+	tcp->rst=0;
+	tcp->psh=0;
+	tcp->ack=0;
+	tcp->urg=0;
+	tcp->window = htons (5840);	/* maximum allowed window size */
+	tcp->check = 0;	//leave checksum 0 now, filled later by pseudo header
+	tcp->urg_ptr = 0;
 
     if ( !data ) {
         strcpy( databuff, "lol xD" );

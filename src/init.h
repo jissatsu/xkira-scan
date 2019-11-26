@@ -12,10 +12,15 @@ extern "C" {
 #include <sys/types.h>
 #include <netdb.h>
 #include <errno.h>
+#include <libnet.h>
 #include "output/output.h"
 #include "inline.h"
 #include "xkira-scan-config.h"
 #include "net.h"
+
+// libnet context
+// init.h
+libnet_t *ltag;
 
 short  __xscan_init__( struct args *args, struct xp_stats *stats, struct xp_setup *setup );
 short  xscan_hostinfo( char *host, struct xp_setup *setup );

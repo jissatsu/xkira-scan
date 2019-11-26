@@ -68,6 +68,11 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
     if ( net_ip( setup->iface, setup->ip ) < 0 ) {
         return -1;
     }
+    
+    // initialize libnet
+    if ( (ltag = libnet_init( LIBNET_RAW4, setup->iface, xscan_errbuf )) == NULL ) {
+        return -1;
+    }
 
     setup->pid = getpid();
     setup->verbose = args->verbose;
