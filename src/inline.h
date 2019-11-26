@@ -17,21 +17,6 @@
 extern "C" {
 #endif
 
-/* Generic checksum */
-inline __inline uint16_t k_cksum( uint16_t *buff, int size )
-{
-    uint32_t sum  = 0;
-    while ( size > 1 )
-    {
-        sum += *buff++;
-        size -= 2;
-    }
-
-    sum = (sum >> 16) + (sum & 0xffff);
-    sum += (sum >> 16);
-    return ~((uint16_t) sum);
-}
-
 /* Convert an ip address from string to a 4 byte array */
 inline __inline void IP2B( const char *ip, uint8_t *dst )
 {

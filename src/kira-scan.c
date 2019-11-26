@@ -1,5 +1,26 @@
 #include "kira-scan.h"
 
+void __xscan_initiate__( struct xp_stats *stats )
+{
+    char dst_ip[30];
+
+    __init_stats__( stats );
+    #ifdef DEBUG
+        v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
+        v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
+        v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
+    #endif
+
+    for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
+    {
+        LB2IP( stats->scan_ip, dst_ip );
+        if ( xscan_scan_host( stats, setup.ip, dst_ip ) < 0 ) {
+            __die( "%s", xscan_errbuf );
+        }
+        stats->scan_ip++;
+    }
+}
+
 /* Initialize the packet based on the protocol */
 short xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, char *sbuff )
 {
@@ -145,34 +166,17 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             );
             return -1;
         }
+        libnet_clear_packet( ltag );
+
+        libnet_stats( ltag, &lstat );
+        printf( "%ld\n", lstat.packets_sent );
         if ( stats->nports > 1 ) {
             dst_port++;
         }
-        stats->nsent++;
+        stats->nsent = lstat.packets_sent;
         mssleep( 0.3 );
     }
     return 0;
-}
-
-void __xscan_initiate__( struct xp_stats *stats )
-{
-    char dst_ip[30];
-
-    __init_stats__( stats );
-    #ifdef DEBUG
-        v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
-        v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
-        v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
-    #endif
-
-    for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
-    {
-        LB2IP( stats->scan_ip, dst_ip );
-        if ( xscan_scan_host( stats, setup.ip, dst_ip ) < 0 ) {
-            __die( "%s", xscan_errbuf );
-        }
-        stats->scan_ip++;
-    }
 }
 
 // start the scan sniffer thread
