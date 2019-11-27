@@ -1,16 +1,15 @@
 #include "init.h"
 
-short __xscan_init__( struct args *args, struct xp_stats *stats,
-                      struct xp_setup *setup )
+short __xscan_init__( struct args *args, struct xp_stats *stats )
 {
-    memset( setup, '\0', sizeof( struct xp_setup ) );
+    memset( &setup, '\0', sizeof( struct xp_setup ) );
     memset( stats, 0, sizeof( struct xp_stats ) );
 
     // check if output goes to the terminal
     if ( isatty( 1 ) && isatty( 2 ) ) {
-        setup->tty = 1;
+        setup.tty = 1;
     }
-    o_set_tty( setup->tty );
+    o_set_tty( setup.tty );
 
     if ( strcmp( args->type, "icmp" ) != 0 && 
          strcmp( args->type, "syn" )  != 0 ) {
@@ -26,7 +25,7 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
             );
             return -1;
         }
-        setup->type = X_ICMP;
+        setup.type = X_ICMP;
     } else {
         if ( !args->ports ) {
             sprintf(
@@ -35,11 +34,11 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
             );
             return -1;
         }
-        setup->type = X_SYN;
+        setup.type = X_SYN;
     }
 
     if ( args->ports ) {
-        if ( xscan_set_ports( args->ports, &(setup->_ports) ) != 0 ) {
+        if ( xscan_set_ports( args->ports, &(setup._ports) ) != 0 ) {
             sprintf(
                 xscan_errbuf,
                 "Invalid port argument!"
@@ -47,7 +46,7 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
             return -1;
         }
 
-        if ( xscan_validate_ports( &(setup->_ports) ) != 0 ) {
+        if ( xscan_validate_ports( &(setup._ports) ) != 0 ) {
             sprintf(
                 xscan_errbuf,
                 "Invalid port argument!"
@@ -56,7 +55,7 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
         }
     }
     
-    if ( xscan_hostinfo( args->host, setup ) != 0 ){
+    if ( xscan_hostinfo( args->host, &setup ) != 0 ){
         sprintf(
             xscan_errbuf,
             "Invalid host argument!"
@@ -65,29 +64,29 @@ short __xscan_init__( struct args *args, struct xp_stats *stats,
     }
 
     // get the ip and name of the first active device
-    if ( net_ip( setup->iface, setup->ip ) < 0 ) {
+    if ( net_ip( setup.iface, setup.ip ) < 0 ) {
         return -1;
     }
     
     // initialize libnet
-    if ( (ltag = libnet_init( LIBNET_RAW4, setup->iface, xscan_errbuf )) == NULL ) {
+    if ( (ltag = libnet_init( LIBNET_RAW4, setup.iface, xscan_errbuf )) == NULL ) {
         return -1;
     }
 
-    setup->pid = getpid();
-    setup->verbose = args->verbose;
+    setup.pid = getpid();
+    setup.verbose = args->verbose;
     
     // range scan (scan a subnet or multiple ports)
-    if ( setup->_host.subnet || setup->_ports.range ) {
-        setup->on = 1;
+    if ( setup._host.subnet || setup._ports.range ) {
+        setup.on = 1;
     }
     #ifdef DEBUG
-        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->type",   setup->type );
-        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->on",     setup->on );
-        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host name",     setup->_host.name );
-        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host ip",       setup->_host.ip );
-        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Our ip",        setup->ip );
-        v_out( VDEBUG, "%s: %s -> %s\n\n", __FILE__, "Our interface", setup->iface );
+        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->type",   setup.type );
+        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->on",     setup.on );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host name",     setup._host.name );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host ip",       setup._host.ip );
+        v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Our ip",        setup.ip );
+        v_out( VDEBUG, "%s: %s -> %s\n\n", __FILE__, "Our interface", setup.iface );
     #endif
     return 0;
 }

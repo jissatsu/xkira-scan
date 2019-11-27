@@ -22,7 +22,7 @@ extern "C" {
 // init.h
 libnet_t *ltag;
 
-short  __xscan_init__( struct args *args, struct xp_stats *stats, struct xp_setup *setup );
+short  __xscan_init__( struct args *args, struct xp_stats *stats );
 short  xscan_hostinfo( char *host, struct xp_setup *setup );
 short  xscan_set_ports( const char *p, struct ports *ports );
 short  xscan_validate_ports( struct ports *ports );

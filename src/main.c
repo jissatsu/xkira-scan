@@ -44,28 +44,26 @@ int main( int argc, char **argv )
         __usage( argv[0] );
     }
     
-    init = __xscan_init__( &args, &stats, &setup );
+    init = __xscan_init__( &args, &stats );
     if ( init != 0 ) {
         __die( "Xkira-scan initialization failed: %s\n", xscan_errbuf );
     }
 
-    if ( xscan_start_sniffer( &stats ) < 0 ) {
+    if ( xscan_start_receiver( &stats ) < 0 ) {
         __die( "Xkira-scan sniffer failure: %s\n", xscan_errbuf );
     }
-    #ifdef DEBUG
-        v_out( VDEBUG, "%s: %s", __FILE__, "Spawned scan sniffer!\n" );
-    #endif
 
     // `setup.on` means we are not performing a single scan
     // we are either scanning a subnet or a single host on a port range
     if ( setup.on ) {
-        //signal( SIGINT,  __End__ );
-        //signal( SIGTERM, __End__ );
+        signal( SIGINT,  __End__ ); /* Ctrl + C */
+        signal( SIGTERM, __End__ );
+        signal( SIGQUIT, __End__ ); /* Ctrl + \ */
+        signal( SIGTSTP, __End__ ); /* Ctrl + Z */
         #ifdef DEBUG
             v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
         #endif
     }
-
     __xscan_initiate__( &stats );
     exit( 0 );
 }

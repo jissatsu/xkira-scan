@@ -28,24 +28,32 @@ __attribute__((packed));
 
 struct ports
 {
-    short range;          /* 1 if port range 0 otherwise */
-    uint32_t start;       /* start port */
-    uint32_t end;         /* end port (0 if no port range was specified) */
+    short range;     /* 1 if port range 0 otherwise */
+    uint32_t start;  /* start port */
+    uint32_t end;    /* end port (0 if no port range was specified) */
 };
 
 struct host
 {
-    char *name;           /* hostname */
-    char *ip;             /* host ip */
-    short subnet;         /* subnet to scan */
+    char *name;     /* hostname */
+    char *ip;       /* host ip */
+    short subnet;   /* subnet to scan */
 };
+
+struct reply
+{
+    char host[100];
+    char ip[15];
+    uint16_t *open_ports;
+}
+__attribute__((packed));
 
 // xscan config structure
 // xkira-scan-config.h
 struct xp_setup
 {
     pid_t pid;            /* process id */
-    char ip[30];          /* our ip address */
+    char ip[15];          /* our ip address */
     char iface[50];       /* our interface name */
     short type;           /* scan type (icmp or syn) */
     short on;             /* range scan (scan a subnet or multiple ports) */
@@ -59,13 +67,13 @@ __attribute__((packed)) setup;
 // xkira-scan-config.h
 struct xp_stats
 {
-    uint16_t nhosts;    /* calculated hosts scan range from subnet */
-    uint16_t nports;    /* total number of ports to scan */
-    uint32_t scan_ip;   /* next ip address to scan */
-    uint32_t nrecv;     /* number of received replies */
-    uint32_t nsent;     /* number of packets sent */
-    uint32_t tpkts;     /* total number of packets to send */
-    double time;        /* time it took to perform the scan */
+    uint16_t nhosts;       /* calculated hosts scan range from subnet */
+    uint16_t nports;       /* total number of ports to scan */
+    uint32_t scan_ip;      /* next ip address to scan */
+    uint32_t nsent;        /* number of packets sent */
+    uint32_t tpkts;        /* total number of packets to send */
+    double time;           /* time it took to perform the scan */
+    struct reply replies[65535];  /* replies */
 }
 __attribute__((packed));
 

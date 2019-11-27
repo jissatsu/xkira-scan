@@ -4,7 +4,9 @@ void __xscan_initiate__( struct xp_stats *stats )
 {
     char dst_ip[30];
 
-    __init_stats__( stats );
+    if ( __init_stats__( stats ) < 0 ) {
+        __die( "%s", xscan_errbuf );
+    }
     #ifdef DEBUG
         v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
         v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
@@ -98,7 +100,7 @@ short xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t src_por
 }
 
 /* initialize the stats */
-void __init_stats__( struct xp_stats *stats )
+short __init_stats__( struct xp_stats *stats )
 {
     if ( setup._host.subnet ) {
         stats->scan_ip = net_off( setup._host.ip, setup._host.subnet ); /* start ip address e.g 192.168.0.1 */
@@ -126,7 +128,20 @@ void __init_stats__( struct xp_stats *stats )
         // total number of packets
         stats->tpkts  = stats->nhosts * 1;
     }
-    return ;
+
+    /* if ( stats->nports > 0 ) {
+        stats->replies.open_ports = (uint16_t *) malloc( stats->nports );
+        if ( !stats->replies.open_ports ) {
+            sprintf(
+                xscan_errbuf,
+                "%s: %s", __FILE__, "open_ports memory allocation error!\n"
+            );
+            return -1;
+        }
+        free( stats->replies.open_ports );
+        printf( "aaa" );
+    } */
+    return 0;
 }
 
 short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
@@ -166,32 +181,26 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             );
             return -1;
         }
-        libnet_clear_packet( ltag );
 
+        libnet_clear_packet( ltag );
         libnet_stats( ltag, &lstat );
-        printf( "%ld\n", lstat.packets_sent );
+        
         if ( stats->nports > 1 ) {
             dst_port++;
         }
         stats->nsent = lstat.packets_sent;
-        mssleep( 0.3 );
+        mssleep( 0.2 );
     }
     return 0;
 }
 
 // start the scan sniffer thread
-short xscan_start_sniffer( struct xp_stats *stats )
+short xscan_start_receiver( struct xp_stats *stats )
 {
     int err;
     pthread_t thread;
     
-    err = pthread_create(
-        &thread,
-        NULL,
-        scan_sniffer,
-        (void *) stats
-    );
-
+    err = pthread_create( &thread, NULL, scan_sniffer, (void *) stats );
     if ( err ) {
         sprintf(
             xscan_errbuf,
@@ -199,10 +208,15 @@ short xscan_start_sniffer( struct xp_stats *stats )
         );
         return -1;
     }
+    #ifdef DEBUG
+        v_out( VDEBUG, "%s: %s", __FILE__, "Spawned scan sniffer!\n" );
+    #endif
     return 0;
 }
 
 void __End__( int sig )
 {
-    return;
+    libnet_clear_packet( ltag );
+    libnet_destroy( ltag );
+    exit( 0 );
 }
