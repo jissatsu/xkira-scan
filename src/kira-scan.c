@@ -19,6 +19,7 @@ void __xscan_initiate__( struct xp_stats *stats )
         if ( xscan_scan_host( stats, setup.ip, dst_ip ) < 0 ) {
             __die( "%s", xscan_errbuf );
         }
+        xscan_print_stats( stats );
         stats->scan_ip++;
     }
 }
@@ -128,19 +129,6 @@ short __init_stats__( struct xp_stats *stats )
         // total number of packets
         stats->tpkts  = stats->nhosts * 1;
     }
-
-    /* if ( stats->nports > 0 ) {
-        stats->replies.open_ports = (uint16_t *) malloc( stats->nports );
-        if ( !stats->replies.open_ports ) {
-            sprintf(
-                xscan_errbuf,
-                "%s: %s", __FILE__, "open_ports memory allocation error!\n"
-            );
-            return -1;
-        }
-        free( stats->replies.open_ports );
-        printf( "aaa" );
-    } */
     return 0;
 }
 
@@ -156,7 +144,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
     memset( sbuff, '\0', sizeof( sbuff ) );
     switch ( setup.type ) {
         case X_SYN:
-            src_port = rand() % 8000;
+            src_port = 8000;
             dst_port = setup._ports.start;
             proto    = IPPROTO_TCP;
 	    break;
@@ -181,7 +169,6 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             );
             return -1;
         }
-
         libnet_clear_packet( ltag );
         libnet_stats( ltag, &lstat );
         
@@ -212,6 +199,11 @@ short xscan_start_receiver( struct xp_stats *stats )
         v_out( VDEBUG, "%s: %s", __FILE__, "Spawned scan sniffer!\n" );
     #endif
     return 0;
+}
+
+void xscan_print_stats( struct xp_stats *stats )
+{
+    return;
 }
 
 void __End__( int sig )

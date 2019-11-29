@@ -74,7 +74,6 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
     }
 
     setup.pid = getpid();
-    setup.verbose = args->verbose;
     
     // range scan (scan a subnet or multiple ports)
     if ( setup._host.subnet || setup._ports.range ) {

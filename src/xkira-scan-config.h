@@ -22,7 +22,6 @@ struct args
     char *type;
     char *host;
     char *ports;
-    int verbose;
 }
 __attribute__((packed));
 
@@ -40,14 +39,6 @@ struct host
     short subnet;   /* subnet to scan */
 };
 
-struct reply
-{
-    char host[100];
-    char ip[15];
-    uint16_t *open_ports;
-}
-__attribute__((packed));
-
 // xscan config structure
 // xkira-scan-config.h
 struct xp_setup
@@ -58,7 +49,6 @@ struct xp_setup
     short type;           /* scan type (icmp or syn) */
     short on;             /* range scan (scan a subnet or multiple ports) */
     short tty;
-    int verbose;          /* verbose mode */
     struct ports _ports;  /* ports to scan */
     struct host _host;    /* data associated with the host */
 }
@@ -67,13 +57,13 @@ __attribute__((packed)) setup;
 // xkira-scan-config.h
 struct xp_stats
 {
-    uint16_t nhosts;       /* calculated hosts scan range from subnet */
-    uint16_t nports;       /* total number of ports to scan */
-    uint32_t scan_ip;      /* next ip address to scan */
-    uint32_t nsent;        /* number of packets sent */
-    uint32_t tpkts;        /* total number of packets to send */
-    double time;           /* time it took to perform the scan */
-    struct reply replies[65535];  /* replies */
+    uint16_t nhosts;               /* calculated hosts scan range from subnet */
+    uint16_t nports;               /* total number of ports to scan */
+    uint16_t scanned_ports[65535]; /* scanned ports on target host (scan_ip) */
+    uint32_t scan_ip;              /* next ip address to scan */
+    uint32_t nsent;                /* number of packets sent */
+    uint32_t tpkts;                /* total number of packets to send */
+    double time;                   /* time it took to perform the scan */
 }
 __attribute__((packed));
 
@@ -81,9 +71,9 @@ __attribute__((packed));
 // xkira-scan-config.h
 struct xp_packet
 {
-    struct icmp icmp;   /* icmp header */
-    struct ip ip;       /* ipv4 header */
-    struct tcphdr tcp;  /* tcp  header */
+    struct icmp *icmp;   /* icmp header */
+    struct ip *ip;       /* ipv4 header */
+    struct tcphdr *tcp;  /* tcp  header */
 }
 xp_pkt;
 

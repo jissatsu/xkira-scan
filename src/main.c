@@ -19,9 +19,8 @@ int main( int argc, char **argv )
     args.host  = NULL;
     args.ports = NULL;
     args.type  = NULL;
-    args.verbose = 0;
 
-    while ( (opt = getopt( argc, argv, "t:d:p:v" )) != -1 ) {
+    while ( (opt = getopt( argc, argv, "t:d:p:" )) != -1 ) {
         switch ( opt ) {
             case 't':
                 args.type  = optarg;
@@ -31,9 +30,6 @@ int main( int argc, char **argv )
                 break;
             case 'p':
                 args.ports = optarg;
-                break;
-            case 'v':
-                args.verbose = 1;
                 break;
             default:
                 __usage( argv[0] );
@@ -64,6 +60,8 @@ int main( int argc, char **argv )
             v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
         #endif
     }
+    // wait for the sniffer to load fully, then initiate the scan
+    mssleep( 0.5 );
     __xscan_initiate__( &stats );
     exit( 0 );
 }
