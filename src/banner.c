@@ -7,4 +7,5 @@ void xscan_banner( void )
         "\t|      XKIRA-SCAN       |\n"\
         "\t-------------------------\n"
     );
+    printf( "\n" );
 }

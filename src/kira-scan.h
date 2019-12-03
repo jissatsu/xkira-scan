@@ -21,10 +21,11 @@ short  xscan_send_packet( const void *buff, size_t size );
 short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport, uint16_t dport, char *sbuff );
 short   __init_stats__( struct xp_stats *stats );
 
-void   xscan_free_stats( struct xp_stats *stats );
-void   xscan_print_stats( struct xp_stats *stats );
-void   __xscan_initiate__( struct xp_stats *stats );
-void   __End__( int sig );
+void  xscan_reset_stats( struct xp_stats *stats );
+void  xscan_free_stats( struct xp_stats *stats );
+void  xscan_print_stats( struct xp_stats *stats );
+void  __xscan_initiate__( struct xp_stats *stats );
+void  __End__( int sig );
 
 #ifdef __cplusplus
 }

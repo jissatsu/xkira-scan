@@ -96,6 +96,18 @@ void * scan_sniffer( void *st )
 void xscan_add_port( uint16_t port, port_t state, SCPorts *ports, uint16_t nports )
 {
     uint16_t index;
+
+    switch ( state )
+    {
+        case XCLOSED:
+            stats.nclosed++;
+            break;
+            
+        case XOPEN:
+            stats.nopen++;
+            break;
+    }
+
     if ( nports == 1 )
     {
         ports[0].port  = port;
