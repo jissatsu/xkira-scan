@@ -37,7 +37,9 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
             if ( is_scan_port( src_port ) == 0 )
             {
                 if ( tcp->syn && tcp->ack ) {
-                    //printf( "%s -> %d:%d\n", src_ip, src_port, dst_port );
+                    #ifdef DEBUG
+                        v_out( VDEBUG, "%s:%d -> %s:%d - [ACK]\n", src_ip, src_port, dst_ip, dst_port );
+                    #endif
                     xscan_add_port(
                         src_port,
                         XOPEN,
@@ -46,7 +48,9 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
                     );
                 }
                 else if ( tcp->rst ) {
-                    //printf( "%s -> %d:%d (CLOSED)\n", src_ip, src_port, dst_port );
+                    #ifdef DEBUG
+                        v_out( VDEBUG, "%s:%d -> %s:%d - [RST]\n", src_ip, src_port, dst_ip, dst_port );
+                    #endif
                     xscan_add_port(
                         src_port,
                         XCLOSED,

@@ -1,4 +1,5 @@
 #include "kira-scan.h"
+#include "banner.h"
 
 static void __usage( char *prog )
 {
@@ -39,6 +40,7 @@ int main( int argc, char **argv )
         }
     }
 
+    xscan_banner();
     if ( !args.host || !args.type ) {
         __usage( argv[0] );
     }
