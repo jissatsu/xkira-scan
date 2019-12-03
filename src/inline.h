@@ -52,10 +52,10 @@ inline __inline uint32_t IP2LB( const char *ip )
     
     IP2B( ip, _ip );
     rtv =
-        (_ip[0] << 24) |
-        (_ip[1] << 16) |
-        (_ip[2] <<  8) |
-        (_ip[3] <<  0);
+        (uint32_t) (_ip[0] << 24) |
+        (uint32_t) (_ip[1] << 16) |
+        (uint32_t) (_ip[2] <<  8) |
+        (uint32_t) (_ip[3] <<  0);
     return rtv;
 }
 

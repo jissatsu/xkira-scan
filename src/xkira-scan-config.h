@@ -10,11 +10,16 @@
 extern "C" {
 #endif
 
+// receiver thread
+// xkira-scan-config.h
+pthread_t thread;
+
 // xscan error buffer
 // xkira-scan-config.h
 char xscan_errbuf[0xFF];
 
-typedef enum { X_SYN, X_ICMP } scan_t;
+typedef enum { X_SYN, X_ICMP  } scan_t;
+typedef enum { XOPEN = 1, XCLOSED } port_t;
 
 // xkira-scan-config.h
 struct args
@@ -22,6 +27,7 @@ struct args
     char *type;
     char *host;
     char *ports;
+    short verbose;
 }
 __attribute__((packed));
 
@@ -39,6 +45,20 @@ struct host
     short subnet;   /* subnet to scan */
 };
 
+typedef struct scanned_ports
+{
+    uint16_t port;
+    short state;
+}
+__attribute__((packed)) SCPorts;
+
+typedef struct scan_hosts
+{
+    char ip[17];
+    uint32_t id;
+}
+__attribute__((packed)) SCHosts;
+
 // xscan config structure
 // xkira-scan-config.h
 struct xp_setup
@@ -49,6 +69,7 @@ struct xp_setup
     short type;           /* scan type (icmp or syn) */
     short on;             /* range scan (scan a subnet or multiple ports) */
     short tty;
+    short verbose;        /* verbose mode */
     struct ports _ports;  /* ports to scan */
     struct host _host;    /* data associated with the host */
 }
@@ -57,25 +78,20 @@ __attribute__((packed)) setup;
 // xkira-scan-config.h
 struct xp_stats
 {
-    uint16_t nhosts;               /* calculated hosts scan range from subnet */
-    uint16_t nports;               /* total number of ports to scan */
-    uint16_t scanned_ports[65535]; /* scanned ports on target host (scan_ip) */
-    uint32_t scan_ip;              /* next ip address to scan */
-    uint32_t nsent;                /* number of packets sent */
-    uint32_t tpkts;                /* total number of packets to send */
-    double time;                   /* time it took to perform the scan */
+    uint16_t nhosts;        /* calculated hosts scan range from subnet */
+    uint16_t nports;        /* total number of ports to scan */
+    uint16_t nclosed;       /* number of closed ports */
+    uint16_t nopen;         /* number of open ports */
+    uint16_t nfiltered;     /* number of filtered ports */
+    uint32_t scan_ip;       /* next ip address to scan */
+    uint32_t nsent;         /* number of packets sent */
+    uint32_t tpkts;         /* total number of packets to send */
+    SCHosts *hosts;         /* a list of the hosts to scan */
+    SCPorts *scanned_ports; /* scanned ports on target host (scan_ip) */
+    char *current_host;     /* host currently in scan */
+    double time;            /* time it took to perform the scan */
 }
-__attribute__((packed));
-
-// packet structure
-// xkira-scan-config.h
-struct xp_packet
-{
-    struct icmp *icmp;   /* icmp header */
-    struct ip *ip;       /* ipv4 header */
-    struct tcphdr *tcp;  /* tcp  header */
-}
-xp_pkt;
+__attribute__((packed)) stats;
 
 #ifdef __cplusplus
 }

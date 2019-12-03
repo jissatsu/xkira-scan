@@ -81,6 +81,25 @@ struct sockaddr_in net_sockaddr( uint16_t family, uint16_t port, char *addr )
     return sock_addr;
 }
 
+char * portservice( uint16_t port )
+{
+    char *service;
+    struct servent *serv;
+
+    service = (char *) malloc( 40 );
+    if ( !service ) {
+        return NULL;
+    }
+    serv = getservbyport( htons( port ), NULL );
+    if ( !serv ) {
+        strcpy( service, "Unknown" );
+    }
+    if ( serv ) {
+        strcpy( service, serv->s_name );
+    }
+    return service;
+}
+
 /*
  * Get the ip address of a network interface
  * @param `char *iface` This is where the device's name is stored

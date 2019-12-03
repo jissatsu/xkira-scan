@@ -2,25 +2,43 @@
 
 void __xscan_initiate__( struct xp_stats *stats )
 {
-    char dst_ip[30];
-
     if ( __init_stats__( stats ) < 0 ) {
         __die( "%s", xscan_errbuf );
     }
+
+    // `setup.on` means we are not performing a single scan
+    // we are either scanning a subnet or a single host on a port range
+    if ( setup.on ) {
+        signal( SIGINT,  __End__ ); /* Ctrl + C */
+        signal( SIGTERM, __End__ );
+        signal( SIGQUIT, __End__ ); /* Ctrl + \ */
+        signal( SIGTSTP, __End__ ); /* Ctrl + Z */
+        #ifdef DEBUG
+            v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
+        #endif
+    }
+
     #ifdef DEBUG
         v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
         v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
         v_out( VDEBUG, "%s: Total packets -> %d\n", __FILE__, stats->tpkts );
     #endif
-
+    
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
-        LB2IP( stats->scan_ip, dst_ip );
-        if ( xscan_scan_host( stats, setup.ip, dst_ip ) < 0 ) {
+        stats->time = 0.0;
+        memset( stats->scanned_ports, 0, (stats->nports + 1) * sizeof( SCPorts ) );
+        
+        if ( xscan_scan_host( stats, setup.ip, stats->hosts[i].ip ) < 0 ) {
+            // free all stats' allocated memory
+            xscan_free_stats( stats );
             __die( "%s", xscan_errbuf );
         }
-        xscan_print_stats( stats );
-        stats->scan_ip++;
+
+        stats->current_host = stats->hosts[i].ip;
+        if ( setup.verbose ) {
+            xscan_print_stats( stats );
+        }
     }
 }
 
@@ -113,11 +131,21 @@ short __init_stats__( struct xp_stats *stats )
     }
 
     // calculate number of ports to scan
-    if ( setup.type == X_SYN ) {
+    if ( setup.type == X_SYN )
+    {
         if ( setup._ports.range ) {
             stats->nports = setup._ports.end - setup._ports.start;
         } else {
             stats->nports = 1;
+        }
+        
+        stats->scanned_ports = (SCPorts *) calloc( stats->nports + 1, sizeof( SCPorts ) );
+        if ( !stats->scanned_ports ) {
+            sprintf(
+                xscan_errbuf,
+                "%s: %s", __FILE__, "scanned_ports memory allocation error!\n"
+            );
+            return -1;
         }
         // total number of packets
         stats->tpkts = stats->nhosts * stats->nports;
@@ -128,6 +156,25 @@ short __init_stats__( struct xp_stats *stats )
         stats->nports = 0;
         // total number of packets
         stats->tpkts  = stats->nhosts * 1;
+    }
+
+    stats->hosts = (SCHosts *) calloc( stats->nhosts, sizeof( SCHosts ) );
+    if ( !stats->hosts ) {
+        sprintf(
+            xscan_errbuf,
+            "%s: %s", __FILE__, "SCHosts memory allocation error!\n"
+        );
+        // if we get to this point that means we have allocated memory
+        // for the scanned_ports and we need to free it before return
+        free( stats->scanned_ports );
+        return -1;
+    }
+
+    for ( register uint16_t i = 0 ; i < stats->nhosts ; i++ )
+    {
+        LB2IP( stats->scan_ip, stats->hosts[i].ip );
+        stats->hosts[i].id = IP2LB( stats->hosts[i].ip );
+        stats->scan_ip++;
     }
     return 0;
 }
@@ -176,7 +223,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             dst_port++;
         }
         stats->nsent = lstat.packets_sent;
-        mssleep( 0.2 );
+        mssleep( 0.1 );
     }
     return 0;
 }
@@ -185,8 +232,6 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 short xscan_start_receiver( struct xp_stats *stats )
 {
     int err;
-    pthread_t thread;
-    
     err = pthread_create( &thread, NULL, scan_sniffer, (void *) stats );
     if ( err ) {
         sprintf(
@@ -203,12 +248,83 @@ short xscan_start_receiver( struct xp_stats *stats )
 
 void xscan_print_stats( struct xp_stats *stats )
 {
-    return;
+    char *service;
+    char state[10];
+    uint16_t port;
+    
+    v_out( VINF, "Scan on host %s finished!\n", stats->current_host );
+    switch ( setup.type ) {
+        case X_SYN:
+            stats->nclosed   = 0;
+            stats->nopen     = 0;
+            stats->nfiltered = 0;
+            
+            if ( setup._ports.range ) {
+                for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ )
+                {
+                    port = stats->scanned_ports[i].port;
+                    switch ( stats->scanned_ports[i].state )
+                    {
+                        case XCLOSED:
+                            strcpy( state, "closed" );
+                            stats->nclosed++;
+                            break;
+
+                        case XOPEN:
+                            strcpy( state, "open" );
+                            stats->nopen++;
+                            break;
+                            
+                        default:
+                            strcpy( state, "filtered" );
+                            stats->nfiltered++;
+                            break;
+                    }
+
+                    service = portservice( port );
+                    printf( "\t%s - %d - %s\n", service, port, state );
+                }
+                printf( "%d - %d - %d\n", stats->nclosed, stats->nopen, stats->nfiltered );
+            } 
+            else {
+                port = setup._ports.start;
+                switch ( stats->scanned_ports[0].state ) {
+                    case XCLOSED:
+                            strcpy( state, "closed" );
+                            stats->nclosed++;
+                            break;
+
+                        case XOPEN:
+                            strcpy( state, "open" );
+                            stats->nopen++;
+                            break;
+                            
+                        default:
+                            strcpy( state, "filtered" );
+                            stats->nfiltered++;
+                            break;
+                }
+                service = portservice( port );
+                printf( "\t%s - %d - %s\n", service, port, state );
+                printf( "%d - %d - %d\n", stats->nclosed, stats->nopen, stats->nfiltered );
+            }
+            break;
+        case X_ICMP:
+            break;
+    }
+    v_ch( '\n' );
 }
 
 void __End__( int sig )
 {
     libnet_clear_packet( ltag );
     libnet_destroy( ltag );
+    xscan_free_stats( &stats );
     exit( 0 );
+}
+
+void xscan_free_stats( struct xp_stats *stats )
+{
+    free( stats->scanned_ports );
+    free( stats->hosts );
 }

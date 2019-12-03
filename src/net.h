@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <netdb.h>
 #include <errno.h>
 #include "xkira-scan-config.h"
 
@@ -18,8 +19,11 @@ extern "C" {
 #endif
 
 void  sockopt_hdrincl( int *sock, int *hdrincl );
+
 short net_ip( char *iface, char *dst );
 short IF_FLAGS( char *iface );
+
+char * portservice( uint16_t port );
 char * is_ip( const char *str );
 char * rand_addr( void );
 
