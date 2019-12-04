@@ -89,6 +89,7 @@ struct xp_stats
     SCHosts *hosts;         /* a list of the hosts to scan */
     SCPorts *scanned_ports; /* scanned ports on target host (scan_ip) */
     char *current_host;     /* host currently in scan */
+    double done;            /*  */
     double time;            /* time it took to perform the scan */
 }
 __attribute__((packed)) stats;
