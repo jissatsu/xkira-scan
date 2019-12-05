@@ -34,7 +34,7 @@ void v_out( vmsg_t type, char *format, ... )
     c2  = (tty) ? NLL : "" ;
     if ( type == VINF )   c1 = (tty) ? YLL : "", pfx = "[INFO] -";
     if ( type == VDEBUG ) c1 = (tty) ? GRN : "", pfx = "[DEBUG] -";
-    if ( type == VWARN )  c1 = (tty) ? YLL : "", pfx = "[WARN] -";
+    if ( type == VWARN )  c1 = (tty) ? RNG : "", pfx = "[WARN] -";
     if ( type == VERR )   c1 = (tty) ? RED : "", pfx = "[ERROR] -";
     // no msg type
     if ( type == NVVV )  c1 = "", pfx = "";

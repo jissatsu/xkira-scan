@@ -44,7 +44,7 @@ void __xscan_initiate__( struct xp_stats *stats )
 }
 
 /* Initialize the packet based on the protocol */
-short xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, char *sbuff )
+short xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port )
 {
     uint32_t irand;
     libnet_ptag_t tcp, icmp, ipv4;
@@ -113,6 +113,22 @@ short xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t src_por
         sprintf(
             xscan_errbuf,
             "libnet_build_ipv4(): %s", libnet_geterror( ltag )
+        );
+        return -1;
+    }
+    return 0;
+}
+
+short xscan_send_packet( short proto, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port )
+{
+    if ( xscan_init_packet( proto, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
+        return -1;
+    }
+
+    if ( libnet_write( ltag ) < 0 ) {
+        sprintf(
+            xscan_errbuf,
+            "xscan_send_packet(): %s", "Error writing packet!"
         );
         return -1;
     }
@@ -209,12 +225,13 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 {
     short proto;
     short dd;
-    short retv;
-    char sbuff[500];
     uint16_t src_port, dst_port;
     struct libnet_stats lstat;
     
-    memset( sbuff, '\0', sizeof( sbuff ) );
+    src_port = 0;
+    dst_port = 0;
+    dd       = (stats->nports > 1 || stats->nports < 1) ? 1 : 0 ;
+    
     switch ( setup.type ) {
         case X_SYN:
             src_port = 8000;
@@ -222,31 +239,19 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             proto    = IPPROTO_TCP;
 	    break;
 
-	case X_ICMP:
-            src_port = 0;
-            dst_port = 0;
-            proto    = IPPROTO_ICMP;
+	default:
+        proto = IPPROTO_ICMP;
 	    break;
     }
-    dd = (stats->nports > 1 || stats->nports < 1) ? 1 : 0 ;
 
-    for ( uint32_t i = 0 ; i < stats->nports + dd ; i++ )
-    {
+    for ( uint32_t i = 0 ; i < stats->nports + dd ; i++ ) {
         if ( setup._ports.start ) {
             // set the current scan port state to default `0` (filtered)
             // if its actually not filtered it will be later set by
             // the scan receiver to either 1 (open) or 2(closed)
             stats->scanned_ports[i].state = 0;
         }
-        if ( (retv = xscan_init_packet( proto, src_ip, dst_ip, src_port, dst_port, sbuff )) < 0 ) {
-            return -1;
-        }
-
-        if ( libnet_write( ltag ) < 0 ) {
-            sprintf(
-                xscan_errbuf,
-                "xscan_scan_host(): %s", "Error writing packet!"
-            );
+        if ( xscan_send_packet( proto, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
             return -1;
         }
         libnet_clear_packet( ltag );
@@ -285,9 +290,10 @@ void xscan_print_stats( struct xp_stats *stats )
     char *state;
     uint16_t port;
     
+    stats->nfiltered = (stats->nports + 1) - (stats->nopen + stats->nclosed);
     v_out( VINF, "[%s]\n", stats->current_host );
-    v_out( VINF, "%d open ports\n", stats->nopen );
     v_out( VINF, "%d closed ports\n", stats->nclosed );
+    v_out( VINF, "%d open ports\n", stats->nopen );
     v_out( VINF, "%d filtered ports\n", stats->nfiltered );
 
     switch ( setup.type )

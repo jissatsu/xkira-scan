@@ -17,8 +17,8 @@ extern "C" {
 
 short  xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip );
 short  xscan_start_receiver( struct xp_stats *stats );
-short  xscan_send_packet( const void *buff, size_t size );
-short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport, uint16_t dport, char *sbuff );
+short  xscan_send_packet( short proto, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port );
+short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport, uint16_t dport );
 short  __init_stats__( struct xp_stats *stats );
 short  __xscan_init_ports__( struct xp_stats *stats );
 short  __xscan_init_hosts__( struct xp_stats *stats );
