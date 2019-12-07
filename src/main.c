@@ -19,7 +19,6 @@ int main( int argc, char **argv )
     args.host    = NULL;
     args.ports   = NULL;
     args.type    = NULL;
-    args.verbose = 0;
 
     while ( (opt = getopt( argc, argv, "t:d:p:v" )) != -1 ) {
         switch ( opt ) {
@@ -31,9 +30,6 @@ int main( int argc, char **argv )
                 break;
             case 'p':
                 args.ports = optarg;
-                break;
-            case 'v':
-                args.verbose = 1;
                 break;
             default:
                 __usage( argv[0] );
@@ -52,6 +48,18 @@ int main( int argc, char **argv )
 
     if ( xscan_start_receiver( &stats ) < 0 ) {
         __die( "Xkira-scan sniffer failure: %s\n", xscan_errbuf );
+    }
+
+    // `setup.on` means we are not performing a single scan
+    // we are either scanning a subnet or a single host on a port range
+    if ( setup.on ) {
+        signal( SIGINT,  __End__ ); /* Ctrl + C */
+        signal( SIGTERM, __End__ );
+        signal( SIGQUIT, __End__ ); /* Ctrl + \ */
+        signal( SIGTSTP, __End__ ); /* Ctrl + Z */
+        #ifdef DEBUG
+            v_out( VDEBUG, "%s: %s", __FILE__, "Registered signal handler!\n" );
+        #endif
     }
 
     // wait for the sniffer to load fully, then initiate the scan

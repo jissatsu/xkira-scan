@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define XSCAN_NBUFFERS 3
+
 // receiver thread
 // xkira-scan-config.h
 pthread_t thread;
@@ -17,6 +19,12 @@ pthread_t thread;
 // xscan error buffer
 // xkira-scan-config.h
 char xscan_errbuf[0xFF];
+
+static char *buffs[3] = {
+    "up",
+    "down",
+    "filtered"
+};
 
 typedef enum { X_SYN, X_ICMP  } scan_t;
 typedef enum { XOPEN = 1, XCLOSED } port_t;
@@ -27,7 +35,6 @@ struct args
     char *type;
     char *host;
     char *ports;
-    short verbose;
 }
 __attribute__((packed));
 
@@ -45,6 +52,14 @@ struct host
     short subnet;   /* subnet to scan */
 };
 
+typedef struct xscan_buffs
+{
+    char type[10];  /* buffer type (filtered, up, down) */
+    char head[10];  /* buffer heading [FILTERED], [UP], [DOWN] */
+    char **buffer;  /* buffer */
+}
+__attribute__((packed)) SCBuffs;
+
 typedef struct scanned_ports
 {
     uint16_t port;
@@ -56,6 +71,7 @@ typedef struct scan_hosts
 {
     char ip[17];
     uint32_t id;
+    short state; /* state of the host (up or down) default is `0` (down) */
 }
 __attribute__((packed)) SCHosts;
 
@@ -69,7 +85,6 @@ struct xp_setup
     short type;           /* scan type (icmp or syn) */
     short on;             /* range scan (scan a subnet or multiple ports) */
     short tty;
-    short verbose;        /* verbose mode */
     struct ports _ports;  /* ports to scan */
     struct host _host;    /* data associated with the host */
 }
@@ -84,11 +99,12 @@ struct xp_stats
     uint16_t nopen;         /* number of open ports */
     uint16_t nfiltered;     /* number of filtered ports */
     uint32_t scan_ip;       /* next ip address to scan */
-    uint32_t nsent;         /* number of packets sent */
-    uint32_t tpkts;         /* total number of packets to send */
+    uint32_t nsent;         /* number of packets sent (used to calculate progress percentage) */
+    uint32_t tpkts;         /* total number of packets to send (used to calculate progress percentage) */
+    SCBuffs *buffers;       /* xscan buffers */
     SCHosts *hosts;         /* a list of the hosts to scan */
     SCPorts *scanned_ports; /* scanned ports on target host (scan_ip) */
-    char *current_host;     /* host currently in scan */
+    SCHosts current_host;   /* host currently in scan */
     double done;            /*  */
     double time;            /* time it took to perform the scan */
 }

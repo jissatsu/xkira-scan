@@ -74,8 +74,6 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
     }
 
     setup.pid = getpid();
-    setup.verbose = args->verbose;
-    
     // range scan (scan a subnet or multiple ports)
     if ( setup._host.subnet || setup._ports.range ) {
         setup.on = 1;
@@ -90,6 +88,140 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
     #endif
     return 0;
 }
+
+/* initialize the stats */
+short __init_stats__( struct xp_stats *stats )
+{
+    if ( __xscan_init_buffs__( stats ) < 0 ) {
+        return -1;
+    }
+
+    if ( setup._host.subnet ) {
+        stats->scan_ip = net_off( setup._host.ip, setup._host.subnet ); /* start ip address e.g 192.168.0.1 */
+        stats->nhosts  = calc_nhosts( setup._host.subnet );
+        stats->scan_ip++;
+    } else {
+        stats->nhosts  = 1;
+        stats->scan_ip = IP2LB( setup._host.ip );
+    }
+
+    // calculate number of ports and packets to scan
+    if ( setup.type == X_SYN )
+    {
+        if ( setup._ports.range ) {
+            stats->nports = setup._ports.end - setup._ports.start;
+        } else {
+            stats->nports = 1;
+        }
+        
+        if ( __xscan_init_ports__( stats ) < 0 ) {
+            return -1;
+        }
+        // total number of packets
+        // multiply by 2 because of the additional icmp probe on line 228
+        stats->tpkts = (stats->nhosts * stats->nports ) * 2;
+    }
+    
+    // no ports
+    if ( setup.type == X_ICMP ) {
+        stats->nports = 0x00;
+        // total number of packets
+        stats->tpkts  = stats->nhosts * 1;
+    }
+
+    if ( __xscan_init_hosts__( stats ) < 0 ) {
+        free( stats->scanned_ports );
+        return -1;
+    }
+    return 0;
+}
+
+short __xscan_init_buffs__( struct xp_stats *stats )
+{
+    char head[15];
+    size_t headlen;
+
+    stats->buffers = (SCBuffs *) calloc( XSCAN_NBUFFERS, sizeof( SCBuffs ) );
+    if ( !stats->buffers ) {
+        sprintf(
+            xscan_errbuf,
+            "%s", strerror( errno )
+        );
+        return -1;
+    }
+    
+    for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ )
+    {
+        stats->buffers[i].buffer = (char **) calloc( 1, sizeof( char * ) );
+        if ( !stats->buffers[i].buffer ) {
+            sprintf(
+                xscan_errbuf,
+                "%s", strerror( errno )
+            );
+            free( stats->buffers );
+            return -1;
+        }
+        
+        strcpy( stats->buffers[i].type, buffs[i] );
+        headlen = strlen( buffs[i] );
+        head[0] = '[';
+        strncpy(
+            &head[1],
+            buffs[i],
+            strlen( buffs[i] )
+        );
+        head[headlen + 1] =  ']';
+        head[headlen + 2] = '\0';
+        strcpy( stats->buffers[i].head, head );
+    }
+    return 0;
+}
+
+/* initialize the scanned_ports (SCPorts) struct array */
+short __xscan_init_ports__( struct xp_stats *stats )
+{
+    stats->scanned_ports = (SCPorts *) calloc( stats->nports + 1, sizeof( SCPorts ) );
+    if ( !stats->scanned_ports ) {
+        sprintf(
+            xscan_errbuf,
+            "%s: %s", __FILE__, "scanned_ports memory allocation error!\n"
+        );
+        return -1;
+    }
+
+    if ( stats->nports == 1 ) {
+        stats->scanned_ports[0].port = setup._ports.start;
+        return 0;
+    }
+    
+    for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ ) {
+        stats->scanned_ports[i].port = setup._ports.start + i;
+    }
+    return 0;
+}
+
+/* initialize the hosts (SCHosts) struct array */
+short __xscan_init_hosts__( struct xp_stats *stats )
+{
+    stats->hosts = (SCHosts *) calloc( stats->nhosts, sizeof( SCHosts ) );
+    if ( !stats->hosts ) {
+        sprintf(
+            xscan_errbuf,
+            "%s: %s", __FILE__, "SCHosts memory allocation error!\n"
+        );
+        return -1;
+    }
+
+    for ( register uint16_t i = 0 ; i < stats->nhosts ; i++ )
+    {
+        LB2IP( stats->scan_ip, stats->hosts[i].ip );
+        stats->hosts[i].id    = IP2LB( stats->hosts[i].ip );
+        stats->hosts[i].state = 0; // host's state defaults to `0` (down)
+        stats->scan_ip++;
+    }
+    return 0;
+}
+
 
 short xscan_validate_ports( struct ports *ports )
 {
