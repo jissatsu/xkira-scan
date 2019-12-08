@@ -41,5 +41,5 @@ void v_out( vmsg_t type, char *format, ... )
 
     va_start( list, format );
     vsprintf( msgf, format, list );
-    printf( "%s%s%s %s", c1, pfx, c2, msgf );
+    printf( "\r%s%s%s %s", c1, pfx, c2, msgf );
 }

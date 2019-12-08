@@ -71,7 +71,8 @@ typedef struct scan_hosts
 {
     char ip[17];
     uint32_t id;
-    short state; /* state of the host (up or down) default is `0` (down) */
+    short state;    /* state of the host (up or down) default is `0` (down) */
+    short in_scan;  /* this value is used in the scan receiver to determin if the host is currently in scan (IT IS IMPORTANT!) */
 }
 __attribute__((packed)) SCHosts;
 

@@ -27,52 +27,51 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
     }
 
     // the packet must be for us and the source ip must be any of the ips we are scanning
-    if ( strcmp( dst_ip, setup.ip ) != 0 && is_scan_host( src_ip, stats ) != 0 ) {
-        return;
-    }
-
-    if ( proto == IPPROTO_TCP && ip->ip_p == proto )
+    if ( strcmp( dst_ip, setup.ip ) == 0 && is_scan_host( src_ip, stats ) == 0 )
     {
-        tcp      = (struct tcphdr *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
-        src_port = ntohs( tcp->th_sport );
-        dst_port = ntohs( tcp->th_dport );
-        
-        if ( is_scan_port( src_port ) == 0 )
+        if ( proto == IPPROTO_TCP && ip->ip_p == proto )
         {
-            if ( tcp->syn && tcp->ack ) {
-                #ifdef DEBUG
-                    v_out( VDEBUG, "%s:%d -> %s:%d - [ACK]\n", src_ip, src_port, dst_ip, dst_port );
-                #endif
-                xscan_add_port(
-                    src_port,
-                    XOPEN,
-                    stats->scanned_ports,
-                    stats->nports
-                );
-            }
-            else if ( tcp->rst ) {
-                #ifdef DEBUG
-                    v_out( VDEBUG, "%s:%d -> %s:%d - [RST]\n", src_ip, src_port, dst_ip, dst_port );
-                #endif
-                xscan_add_port(
-                    src_port,
-                    XCLOSED,
-                    stats->scanned_ports,
-                    stats->nports
-                );
+            tcp      = (struct tcphdr *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
+            src_port = ntohs( tcp->th_sport );
+            dst_port = ntohs( tcp->th_dport );
+            
+            if ( is_scan_port( src_port ) == 0 )
+            {
+                if ( tcp->syn && tcp->ack ) {
+                    #ifdef DEBUG
+                        v_out( VDEBUG, "%s:%d -> %s:%d - [ACK]\n", src_ip, src_port, dst_ip, dst_port );
+                    #endif
+                    xscan_add_port(
+                        src_port,
+                        XOPEN,
+                        stats->scanned_ports,
+                        stats->nports
+                    );
+                }
+                else if ( tcp->rst ) {
+                    #ifdef DEBUG
+                        v_out( VDEBUG, "%s:%d -> %s:%d - [RST]\n", src_ip, src_port, dst_ip, dst_port );
+                    #endif
+                    xscan_add_port(
+                        src_port,
+                        XCLOSED,
+                        stats->scanned_ports,
+                        stats->nports
+                    );
+                }
             }
         }
-    }
 
-    if ( proto == IPPROTO_ICMP && ip->ip_p == proto )
-    {
-        icmp = (struct icmp *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
-        // packet id must match our pid
-        if ( ntohs( icmp->icmp_id ) != setup.pid ) {
-            return;
-        }
-        if ( icmp->icmp_type == ICMP_ECHOREPLY ) {
-            printf( "icmp->icmp_id = %d and host [%s] is UP\n", icmp->icmp_id, src_ip );
+        if ( proto == IPPROTO_ICMP && ip->ip_p == proto )
+        {
+            icmp = (struct icmp *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
+            // packet id must match our pid
+            if ( ntohs( icmp->icmp_id ) != setup.pid ) {
+                return;
+            }
+            if ( icmp->icmp_type == ICMP_ECHOREPLY ) {
+                printf( "icmp->icmp_id = %d and host [%s] is UP\n", icmp->icmp_id, src_ip );
+            }
         }
     }
     // xscan_accum_stats( stats );
@@ -123,25 +122,21 @@ void xscan_add_port( uint16_t port, port_t state, SCPorts *ports, uint16_t nport
 {
     uint16_t index;
 
-    switch ( state )
-    {
+    switch ( state ) {
         case XCLOSED:
             stats.nclosed++;
             break;
-            
         case XOPEN:
             stats.nopen++;
             break;
     }
 
-    if ( nports == 1 )
-    {
+    if ( nports == 1 ) {
         ports[0].port  = port;
         ports[0].state = state;
     }
 
-    if ( nports > 1 )
-    {
+    if ( nports > 1 ) {
         index = port - setup._ports.start;
         ports[index].port  = port;
         ports[index].state = state;
@@ -181,8 +176,13 @@ short is_scan_host( char *ip, struct xp_stats *stats )
             }
             item = stats->hosts[m].id;
 
-            if ( item == search ) {
-                stats->hosts[m].state = 1;
+            // we found the host and is currently in scan
+            if ( item == search && stats->hosts[m].in_scan ) {
+                // change host's state to up
+                if ( !stats->hosts[m].state ) {
+                    stats->hosts[m].state = 1;
+                }
+                // printf( "aaaa -> %d - %d\n", stats->hosts[m].in_scan, stats->hosts[m].state );
                 return 0;
             }
 
@@ -200,7 +200,10 @@ short is_scan_host( char *ip, struct xp_stats *stats )
     if ( stats->nhosts <= 255 )
     {
         for ( register uint16_t i = 0 ; i < stats->nhosts ; i++ ) {
-            if ( strcmp( ip, stats->hosts[i].ip ) == 0 ) {
+            if ( strcmp( ip, stats->hosts[i].ip ) == 0 && stats->hosts[i].in_scan ) {
+                if ( !stats->hosts[i].state ) {
+                    stats->hosts[i].state = 1;
+                }
                 return 0;
             }
         }

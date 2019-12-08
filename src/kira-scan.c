@@ -15,6 +15,7 @@ void __xscan_initiate__( struct xp_stats *stats )
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
         xscan_reset_stats( stats );
+        stats->hosts[i].in_scan = 1;
         if ( xscan_scan_host( stats, setup.ip, stats->hosts[i].ip ) < 0 ) {
             // free all stats' allocated memory before dying
             xscan_free_stats( stats );
@@ -27,6 +28,8 @@ void __xscan_initiate__( struct xp_stats *stats )
         stats->done = cpercent( (double) stats->tpkts, (double) stats->nsent );
         printf( "[%0.2lf%%] - %s\n", stats->done, stats->hosts[i].ip );
         xscan_accum_stats( stats );
+        // not in scan anymore
+        stats->hosts[i].in_scan = 0;
     }
 }
 
@@ -138,7 +141,8 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 	    break;
     }
 
-    // send an icmp echo before the actual scanning
+    // send an icmp echo before the actual scanning in case the host is actually
+    // up but has all ports filtered (which means that we won't receive any replies)
     if ( xscan_send_packet( IPPROTO_ICMP, setup.ip, dst_ip, 0x00, 0x00 ) < 0 ) {
         return -1;
     }
@@ -147,7 +151,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
         if ( setup._ports.start ) {
             // set the current scan port state to default `0` (filtered)
             // if its actually not filtered it will be later set by
-            // the scan receiver to either 1 (open) or 2(closed)
+            // the scan receiver to either 1 (open) or 2 (closed)
             stats->scanned_ports[i].state = 0;
         }
         if ( xscan_send_packet( proto, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
@@ -170,21 +174,20 @@ void xscan_accum_stats( struct xp_stats *stats )
     char *service;
     char *state;
     uint16_t port;
+
+    if ( !stats->current_host.state ) {
+        v_out( 
+            VWARN, 
+            "Host is either down or behind a firewall blocking ICMP echo requests!\n", 
+            setup._ports.start, setup._ports.end );
+        return;
+    }
     
-    stats->nfiltered = (stats->nports + 1) - (stats->nopen + stats->nclosed);
     switch ( setup.type )
     {
         case X_SYN:
             if ( setup._ports.range )
             {
-                if ( !stats->nopen && !stats->nclosed ) {
-                    v_out(
-                        VWARN, "Host is either down or has ports [%d - %d] filtered!\n",
-                        setup._ports.start,
-                        setup._ports.end
-                    );
-                    break;
-                }
                 printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
                 for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ )
                 {
