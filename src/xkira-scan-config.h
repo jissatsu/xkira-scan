@@ -27,6 +27,7 @@ static char *buffs[3] = {
 };
 
 typedef enum { X_SYN, X_ICMP  } scan_t;
+typedef enum { XDOWN, XACTIVE, XFILTERED } xstate_t;
 typedef enum { XOPEN = 1, XCLOSED } port_t;
 
 // xkira-scan-config.h
@@ -70,9 +71,10 @@ __attribute__((packed)) SCPorts;
 typedef struct scan_hosts
 {
     char ip[17];
-    uint32_t id;
-    short state;    /* state of the host (up or down) default is `0` (down) */
-    short in_scan;  /* this value is used in the scan receiver to determin if the host is currently in scan (IT IS IMPORTANT!) */
+    uint32_t id;      /* host's id (its ip converted to 32-bit int) */
+    short state;      /* state of the host (up or down) default is `0` (down) */
+    short in_scan;    /* this value is used in the scan receiver to determine if the host is currently in scan (IT IS IMPORTANT!) */
+    short port_resp;  /* this is set to 1 if the host has sent atleast one RST (port is closed) or one ACK (port is open), 0 otherwise (all ports are filtered) assuming the host is up */
 }
 __attribute__((packed)) SCHosts;
 
@@ -96,17 +98,22 @@ struct xp_stats
 {
     uint16_t nhosts;        /* calculated hosts scan range from subnet */
     uint16_t nports;        /* total number of ports to scan */
+    uint16_t ndown;         /* number of hosts that are down */
+    uint16_t nfiltered;     /* number of hosts that have all scanned ports filtered */
+    uint16_t nactive;       /* number of hosts that are active (those that have responded on atleast one port) */
     uint16_t nclosed;       /* number of closed ports */
     uint16_t nopen;         /* number of open ports */
-    uint16_t nfiltered;     /* number of filtered ports */
+
     uint32_t scan_ip;       /* next ip address to scan */
     uint32_t nsent;         /* number of packets sent (used to calculate progress percentage) */
     uint32_t tpkts;         /* total number of packets to send (used to calculate progress percentage) */
+
     SCBuffs *buffers;       /* xscan buffers */
     SCHosts *hosts;         /* a list of the hosts to scan */
     SCPorts *scanned_ports; /* scanned ports on target host (scan_ip) */
     SCHosts current_host;   /* host currently in scan */
-    double done;            /*  */
+
+    double done;            /* progress percentage */
     double time;            /* time it took to perform the scan */
 }
 __attribute__((packed)) stats;

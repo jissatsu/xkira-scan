@@ -16,6 +16,7 @@ void __xscan_initiate__( struct xp_stats *stats )
     {
         xscan_reset_stats( stats );
         stats->hosts[i].in_scan = 1;
+        
         if ( xscan_scan_host( stats, setup.ip, stats->hosts[i].ip ) < 0 ) {
             // free all stats' allocated memory before dying
             xscan_free_stats( stats );
@@ -171,46 +172,106 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 
 void xscan_accum_stats( struct xp_stats *stats )
 {
-    char *service;
-    char *state;
-    uint16_t port;
-
+    short pstat;
+    // host is not up
     if ( !stats->current_host.state ) {
         v_out( 
             VWARN, 
-            "Host is either down or behind a firewall blocking ICMP echo requests!\n", 
+            "Host is either down or behind a firewall!\n", 
             setup._ports.start, setup._ports.end );
+        // push host to the `down` list
+        pstat = xscan_push_host(
+            XDOWN,
+            stats->current_host.ip,
+            NULL
+        );
+
+        if ( pstat < 0 ) {
+            __die( "%s", xscan_errbuf );
+        }
         return;
     }
-    
-    switch ( setup.type )
+
+    // host is up, but has all scan ports filtered
+    if ( stats->current_host.state && !stats->current_host.port_resp )
     {
-        case X_SYN:
-            if ( setup._ports.range )
-            {
-                printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
-                for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ )
-                {
-                    state   = xscan_portstate_expl( stats->scanned_ports[i].state );
-                    port    = stats->scanned_ports[i].port;
-                    service = portservice( port );
-                    printf( "\t%-7d  %-8s  %s\n", port, service, state );
-                }
-            }
-            
-            if ( !setup._ports.range )
-            {
-                printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
-                state   = xscan_portstate_expl( stats->scanned_ports[0].state );
-                port    = setup._ports.start;
-                service = portservice( port );
-                printf( "\t%-7d  %-8s  %s\n", port, service, state );
-            }
+        // push host to the `filtered` list
+        printf( "host is filtered!\n" );
+        pstat = xscan_push_host(
+            XFILTERED,
+            stats->current_host.ip,
+            NULL
+        );
+
+        if ( pstat < 0 ) {
+            __die( "%s", xscan_errbuf );
+        }
+    } else {
+        // push host to the `up` list
+        printf( "host is not filtered!\n" );
+        pstat = xscan_push_host(
+            XACTIVE,
+            stats->current_host.ip,
+            stats->scanned_ports
+        );
+
+        if ( pstat < 0 ) {
+            __die( "%s", xscan_errbuf );
+        }
+    }
+
+    /* if ( setup._ports.range )
+    {
+        printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
+        for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ )
+        {
+            state   = xscan_portstate_expl( stats->scanned_ports[i].state );
+            port    = stats->scanned_ports[i].port;
+            service = portservice( port );
+            printf( "\t%-7d  %-8s  %s\n", port, service, state );
+        }
+    }
+    
+    if ( !setup._ports.range )
+    {
+        printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
+        state   = xscan_portstate_expl( stats->scanned_ports[0].state );
+        port    = setup._ports.start;
+        service = portservice( port );
+        printf( "\t%-7d  %-8s  %s\n", port, service, state );
+    } */
+    v_ch( '\n' );
+}
+
+short xscan_push_host( xstate_t state, const char *ip, const SCPorts *ports )
+{
+    SCBuffs push_buff;
+    
+    switch ( state ) {
+        case XDOWN:
+            // down hosts buffer
+            push_buff = stats.buffers[1];
             break;
-        case X_ICMP:
+        case XFILTERED:
+            // filtered hosts buffer
+            push_buff = stats.buffers[2];
+            break;
+        case XACTIVE:
+            // active hosts buffer
+            push_buff = stats.buffers[0];
             break;
     }
-    v_ch( '\n' );
+
+    push_buff.buffer = (char **) calloc( 1, sizeof( char * ) );
+    if ( !push_buff.buffer ) {
+        sprintf(
+            xscan_errbuf,
+            "%s", strerror( errno )
+        );
+        xscan_free_stats( &stats );
+        return -1;
+    }
+    return 0;
 }
 
 char * xscan_portstate_expl( port_t state )
@@ -236,13 +297,17 @@ void xscan_reset_stats( struct xp_stats *stats )
 {
     stats->nclosed   = 0x00;
     stats->nopen     = 0x00;
-    stats->nfiltered = 0x00;
     stats->time      = 0.0;
 
     //for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ ) {
     //    stats->scanned_ports[i].state = 0;
     //}
     // memset( stats->scanned_ports, 0, (stats->nports + 1) * sizeof( SCPorts ) );
+}
+
+void xscan_print_stats( struct xp_stats *stats )
+{
+    return;
 }
 
 double cpercent( double total, double frac )
@@ -262,5 +327,11 @@ void xscan_free_stats( struct xp_stats *stats )
 {
     free( stats->scanned_ports );
     free( stats->hosts );
+    
+    for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
+        if ( stats->buffers[i].buffer ) {
+            free( stats->buffers[i].buffer );
+        }
+    }
     free( stats->buffers );
 }

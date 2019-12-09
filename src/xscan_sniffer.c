@@ -9,6 +9,7 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
     short proto;
     uint16_t src_port;
     uint16_t dst_port;
+    uint32_t dec_ip;
     struct ip *ip = (struct ip *) (packet + 14);
     struct tcphdr *tcp;
     struct icmp *icmp;
@@ -25,6 +26,9 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
     if ( setup.type == X_ICMP ) {
         proto = IPPROTO_ICMP;
     }
+
+    // source ip in decimal format
+    dec_ip = IP2LB( src_ip );
 
     // the packet must be for us and the source ip must be any of the ips we are scanning
     if ( strcmp( dst_ip, setup.ip ) == 0 && is_scan_host( src_ip, stats ) == 0 )
@@ -59,6 +63,7 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
                         stats->nports
                     );
                 }
+                xscan_set_portresp( src_ip, stats->hosts, stats->nhosts );
             }
         }
 
@@ -116,6 +121,19 @@ void * scan_sniffer( void *st )
     pcap_loop( handle, -1, packet_handler, (void *) st );
     pcap_close( handle );
     return NULL;
+}
+
+void xscan_set_portresp( char *ip, SCHosts *hosts, uint16_t nhosts )
+{
+    uint32_t id    = IP2LB( ip );
+    uint32_t right = hosts[nhosts - 1].id;
+    uint32_t left  = hosts[0].id;
+    uint16_t index = (right - left) - (right - id);
+    
+    if ( !hosts[index].port_resp ) {
+        hosts[index].port_resp = 1;
+    }
+    return;
 }
 
 void xscan_add_port( uint16_t port, port_t state, SCPorts *ports, uint16_t nports )
@@ -204,6 +222,7 @@ short is_scan_host( char *ip, struct xp_stats *stats )
                 if ( !stats->hosts[i].state ) {
                     stats->hosts[i].state = 1;
                 }
+                // printf( "zzzz -> %d - %d\n", stats->hosts[i].in_scan, stats->hosts[i].state );
                 return 0;
             }
         }

@@ -67,6 +67,7 @@ int main( int argc, char **argv )
     __xscan_initiate__( &stats );
     // wait for the receiver to terminate
     //pthread_join( thread, NULL );
+    xscan_print_stats( &stats );
     xscan_free_stats( &stats );
     exit( 0 );
 }

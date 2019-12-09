@@ -138,7 +138,7 @@ short __init_stats__( struct xp_stats *stats )
 
 short __xscan_init_buffs__( struct xp_stats *stats )
 {
-    /* char head[15];
+    char head[15];
     size_t headlen;
 
     stats->buffers = (SCBuffs *) calloc( XSCAN_NBUFFERS, sizeof( SCBuffs ) );
@@ -150,20 +150,12 @@ short __xscan_init_buffs__( struct xp_stats *stats )
         return -1;
     }
     
+    stats->buffers[0].buffer = NULL;
+    stats->buffers[1].buffer = NULL;
+    stats->buffers[2].buffer = NULL;
+
     for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ )
-    {
-        stats->buffers[i].buffer = (char **) calloc( 1, sizeof( char * ) );
-        free( stats->buffers[i].buffer );
-        
-        if ( !stats->buffers[i].buffer ) {
-            sprintf(
-                xscan_errbuf,
-                "%s", strerror( errno )
-            );
-            free( stats->buffers );
-            return -1;
-        }
-        
+    {   
         strcpy( stats->buffers[i].type, buffs[i] );
         headlen = strlen( buffs[i] );
         head[0] = '[';
@@ -175,7 +167,7 @@ short __xscan_init_buffs__( struct xp_stats *stats )
         head[headlen + 1] =  ']';
         head[headlen + 2] = '\0';
         strcpy( stats->buffers[i].head, head );
-    } */
+    }
     return 0;
 }
 
