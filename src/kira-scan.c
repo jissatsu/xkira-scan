@@ -281,7 +281,8 @@ short xscan_set_pushbuff( SCBuffs *push_loc, const char *ip, uint16_t offset, ui
     if ( !push_loc->buffer ) {
         sprintf(
             xscan_errbuf, 
-            "%s", strerror( errno )
+            "%s - %d", strerror( errno ),
+            __LINE__
         );
         return -1;
     }
@@ -313,44 +314,10 @@ char * xscan_portstate_expl( port_t state )
     return state_expl;
 }
 
-void xscan_print_stats( struct xp_stats *stats )
-{
-    printf( "[DOWN]\n" );
-    for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
-        printf( "%s\n", stats->buffers[1].buffer[i] );
-    }
-    printf( "\n\n" );
-
-    printf( "[FILTERED]\n" );
-    for ( register uint16_t i = 0 ; i < stats->nfiltered ; i++ ) {
-        printf( "%s\n", stats->buffers[2].buffer[i] );
-    }
-    printf( "\n\n" );
-    return;
-}
-
-double cpercent( double total, double frac )
-{
-    return (double) (frac / total) * 100;
-}
-
 void __End__( int sig )
 {
     libnet_clear_packet( ltag );
     libnet_destroy( ltag );
     xscan_free_stats( &stats );
     exit( 0 );
-}
-
-void xscan_free_stats( struct xp_stats *stats )
-{
-    free( stats->scanned_ports );
-    free( stats->hosts );
-
-    for ( register uint16_t i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
-        if ( stats->buffers[i].buffer ) {
-            free( stats->buffers[i].buffer );
-        }
-    }
-    free( stats->buffers );
 }

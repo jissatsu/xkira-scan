@@ -186,7 +186,9 @@ short __xscan_init_ports__( struct xp_stats *stats )
     if ( !stats->scanned_ports ) {
         sprintf(
             xscan_errbuf,
-            "%s: %s", __FILE__, "scanned_ports memory allocation error!\n"
+            "%s: %s",
+            __FILE__,
+            "scanned_ports memory allocation error!\n"
         );
         return -1;
     }
@@ -209,7 +211,9 @@ short __xscan_init_hosts__( struct xp_stats *stats )
     if ( !stats->hosts ) {
         sprintf(
             xscan_errbuf,
-            "%s: %s", __FILE__, "SCHosts memory allocation error!\n"
+            "%s: %s",
+            __FILE__,
+            "SCHosts memory allocation error!\n"
         );
         return -1;
     }

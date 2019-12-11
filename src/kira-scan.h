@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include "stats.h"
 #include "xscan_sniffer.h"
 #include "init.h"
 #include "sleep.h"
@@ -20,11 +21,8 @@ short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport,
 short  xscan_push_host( xstate_t state, char *ip, const SCPorts *ports );
 short  xscan_set_pushbuff( SCBuffs *push_loc, const char *ip, uint16_t offset, uint16_t newsize );
 
-double cpercent( double total, double frac );
-
-void  xscan_print_stats( struct xp_stats *stats );
+void  xscan_print_ports( SCPorts *ports, uint16_t nports );
 void  xscan_reset_stats( struct xp_stats *stats );
-void  xscan_free_stats( struct xp_stats *stats );
 void  xscan_accum_stats( struct xp_stats *stats );
 void  __xscan_initiate__( struct xp_stats *stats );
 void  __End__( int sig );
