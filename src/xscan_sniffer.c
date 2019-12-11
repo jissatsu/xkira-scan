@@ -176,7 +176,6 @@ short is_scan_port( uint16_t port )
 
 short is_scan_host( char *ip, struct xp_stats *stats )
 {
-    //static int i = 0;
     if ( stats->nhosts > 255 )
     {
         uint16_t size   = stats->nhosts;

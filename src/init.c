@@ -149,10 +149,18 @@ short __xscan_init_buffs__( struct xp_stats *stats )
         );
         return -1;
     }
-    
-    stats->buffers[0].buffer = NULL;
-    stats->buffers[1].buffer = NULL;
-    stats->buffers[2].buffer = NULL;
+
+    for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ )
+    {
+        stats->buffers[i].buffer = (char **) calloc( 1, sizeof( char * ) );
+        if ( !stats->buffers[i].buffer ) {
+            sprintf(
+                xscan_errbuf,
+                "%s", strerror( errno )
+            );
+            return -1;
+        }
+    }
 
     for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ )
     {   

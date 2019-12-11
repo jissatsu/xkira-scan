@@ -14,7 +14,9 @@ void __xscan_initiate__( struct xp_stats *stats )
     
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
-        xscan_reset_stats( stats );
+        stats->nclosed   = 0x00;
+        stats->nopen     = 0x00;
+        stats->time      = 0.0;
         stats->hosts[i].in_scan = 1;
         
         if ( xscan_scan_host( stats, setup.ip, stats->hosts[i].ip ) < 0 ) {
@@ -220,55 +222,67 @@ void xscan_accum_stats( struct xp_stats *stats )
         }
     }
 
-    /* if ( setup._ports.range )
-    {
-        printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
-        for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ )
-        {
-            state   = xscan_portstate_expl( stats->scanned_ports[i].state );
-            port    = stats->scanned_ports[i].port;
-            service = portservice( port );
-            printf( "\t%-7d  %-8s  %s\n", port, service, state );
-        }
-    }
-    
-    if ( !setup._ports.range )
-    {
-        printf( "\n\t[PORT]  [SERVICE]  [STATE]\n" );
-        state   = xscan_portstate_expl( stats->scanned_ports[0].state );
-        port    = setup._ports.start;
-        service = portservice( port );
-        printf( "\t%-7d  %-8s  %s\n", port, service, state );
-    } */
+    // printf( "\t%-7d  %-8s  %s\n", port, service, state );
     v_ch( '\n' );
 }
 
-short xscan_push_host( xstate_t state, const char *ip, const SCPorts *ports )
+short xscan_push_host( xstate_t state, char *ip, const SCPorts *ports )
 {
-    SCBuffs push_buff;
-    
+    SCBuffs *push_loc;
+    size_t newsize;
+
     switch ( state ) {
         case XDOWN:
             // down hosts buffer
-            push_buff = stats.buffers[1];
+            push_loc = &stats.buffers[1];
+            if ( xscan_set_pushbuff( push_loc, ip, stats.ndown, stats.ndown + 1 ) < 0 ) {
+                return -1;
+            }
+            ++stats.ndown;
             break;
+
         case XFILTERED:
             // filtered hosts buffer
-            push_buff = stats.buffers[2];
+            push_loc = &stats.buffers[2];
+            if ( xscan_set_pushbuff( push_loc, ip, stats.nfiltered, stats.nfiltered + 1 ) < 0 ) {
+                return -1;
+            }
+            ++stats.nfiltered;
             break;
+            
         case XACTIVE:
             // active hosts buffer
-            push_buff = stats.buffers[0];
+            push_loc = &stats.buffers[0];
+            if ( xscan_set_pushbuff( push_loc, ip, stats.nactive, stats.nactive + 1 ) < 0 ) {
+                return -1;
+            }
+            ++stats.nactive;
             break;
     }
+    return 0;
+}
 
-    push_buff.buffer = (char **) calloc( 1, sizeof( char * ) );
-    if ( !push_buff.buffer ) {
+// set the push buffer and expand it for the next item
+short xscan_set_pushbuff( SCBuffs *push_loc, const char *ip, uint16_t offset, uint16_t newsize )
+{
+    push_loc->buffer[offset] = (char *) malloc( 17 * sizeof( char ) );
+    if ( !push_loc->buffer[offset] ) {
         sprintf(
             xscan_errbuf,
+            "%s - %d", strerror( errno ),
+            __LINE__
+        );
+        return -1;
+    }
+    strcpy( push_loc->buffer[offset], ip );
+
+    // expand the current buffer
+    push_loc->buffer = (char **) realloc( push_loc->buffer, (newsize + 1) * sizeof( char * ) );
+    if ( !push_loc->buffer ) {
+        sprintf(
+            xscan_errbuf, 
             "%s", strerror( errno )
         );
-        xscan_free_stats( &stats );
         return -1;
     }
     return 0;
@@ -276,7 +290,13 @@ short xscan_push_host( xstate_t state, const char *ip, const SCPorts *ports )
 
 char * xscan_portstate_expl( port_t state )
 {
-    static char state_expl[10];
+    char *state_expl;
+
+    state_expl = (char *) calloc( 10, sizeof( char ) );
+    if ( !state_expl ) {
+        return NULL;
+    }
+    
     switch ( state ) {
         case XCLOSED:
             strcpy( state_expl, "closed" );
@@ -293,20 +313,19 @@ char * xscan_portstate_expl( port_t state )
     return state_expl;
 }
 
-void xscan_reset_stats( struct xp_stats *stats )
-{
-    stats->nclosed   = 0x00;
-    stats->nopen     = 0x00;
-    stats->time      = 0.0;
-
-    //for ( register uint16_t i = 0 ; i < stats->nports + 1 ; i++ ) {
-    //    stats->scanned_ports[i].state = 0;
-    //}
-    // memset( stats->scanned_ports, 0, (stats->nports + 1) * sizeof( SCPorts ) );
-}
-
 void xscan_print_stats( struct xp_stats *stats )
 {
+    printf( "[DOWN]\n" );
+    for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
+        printf( "%s\n", stats->buffers[1].buffer[i] );
+    }
+    printf( "\n\n" );
+
+    printf( "[FILTERED]\n" );
+    for ( register uint16_t i = 0 ; i < stats->nfiltered ; i++ ) {
+        printf( "%s\n", stats->buffers[2].buffer[i] );
+    }
+    printf( "\n\n" );
     return;
 }
 
@@ -327,8 +346,8 @@ void xscan_free_stats( struct xp_stats *stats )
 {
     free( stats->scanned_ports );
     free( stats->hosts );
-    
-    for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
+
+    for ( register uint16_t i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
         if ( stats->buffers[i].buffer ) {
             free( stats->buffers[i].buffer );
         }
