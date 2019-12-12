@@ -2,40 +2,58 @@
 
 void xscan_print_hosts( struct xp_stats *stats )
 {
-    printf( "[DOWN]\n" );
+    // list all the hosts that are down
+    printf( "\t\t%s\n", stats->scanned_hosts[1].head );
     if ( stats->ndown ) {
         for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
-            printf( "%s\n", stats->buffers[1].buffer[i] );
+            v_out(
+                VINF,
+                "Host [%s] is down!\n",
+                stats->scanned_hosts[1].buffer[i]->ip
+            );
         }
         v_ch( '\n' );
         v_ch( '\n' );
+    }
+    if ( !stats->ndown ) {
+        printf( "\t\t--NONE--\n\n" );
     }
 
-    printf( "[FILTERED]\n" );
+    // list all the hosts that have the scan ports filtered
+    printf( "\t\t%s\n", stats->scanned_hosts[2].head );
     if ( stats->nfiltered ) {
         for ( register uint16_t i = 0 ; i < stats->nfiltered ; i++ ) {
-            printf( "%s\n", stats->buffers[2].buffer[i] );
+            v_out(
+                VINF,
+                "Host [%s] has ports %d - %d filtered!\n",
+                stats->scanned_hosts[2].buffer[i]->ip,
+                setup._ports.start,
+                setup._ports.end
+            );
         }
         v_ch( '\n' );
         v_ch( '\n' );
     }
-    return;
+    if ( !stats->nfiltered ) {
+        printf( "\t\t--NONE--\n\n" );
+    }
+}
+
+void xscan_free_stats( struct xp_stats *stats )
+{
+    if ( stats->current_host.ports ) {
+        free( stats->current_host.ports );
+    }
+    
+    for ( register uint16_t i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
+        if ( stats->scanned_hosts[i].buffer ) {
+            free( stats->scanned_hosts[i].buffer );
+        }
+    }
+    free( stats->scanned_hosts );
 }
 
 double cpercent( double total, double frac )
 {
     return (double) (frac / total) * 100;
-}
-
-void xscan_free_stats( struct xp_stats *stats )
-{
-    free( stats->scanned_ports );
-    free( stats->hosts );
-
-    for ( register uint16_t i = 0 ; i < XSCAN_NBUFFERS ; i++ ) {
-        if ( stats->buffers[i].buffer ) {
-            free( stats->buffers[i].buffer );
-        }
-    }
-    free( stats->buffers );
 }

@@ -30,9 +30,14 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
     // source ip in decimal format
     dec_ip = IP2LB( src_ip );
 
-    // the packet must be for us and the source ip must be any of the ips we are scanning
-    if ( strcmp( dst_ip, setup.ip ) == 0 && is_scan_host( src_ip, stats ) == 0 )
+    // the packet must be for us and the source ip must be same as the current host's ip
+    if ( strcmp( dst_ip, setup.ip ) == 0 && strcmp( src_ip, stats->current_host.ip ) == 0 )
     {
+        // mark current host as `up`
+        if ( !stats->current_host.state ) {
+            stats->current_host.state = 1;
+        }
+
         if ( proto == IPPROTO_TCP && ip->ip_p == proto )
         {
             tcp      = (struct tcphdr *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
@@ -48,7 +53,7 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
                     xscan_add_port(
                         src_port,
                         XOPEN,
-                        stats->scanned_ports,
+                        stats->current_host.ports,
                         stats->nports
                     );
                 }
@@ -59,11 +64,14 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
                     xscan_add_port(
                         src_port,
                         XCLOSED,
-                        stats->scanned_ports,
+                        stats->current_host.ports,
                         stats->nports
                     );
                 }
-                xscan_set_portresp( src_ip, stats->hosts, stats->nhosts );
+                // host responded on a port
+                if ( !stats->current_host.port_resp ) {
+                    stats->current_host.port_resp = 1;
+                }
             }
         }
 
@@ -79,7 +87,6 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
             }
         }
     }
-    // xscan_accum_stats( stats );
     return;
 }
 
@@ -123,19 +130,6 @@ void * scan_sniffer( void *st )
     return NULL;
 }
 
-void xscan_set_portresp( char *ip, SCHosts *hosts, uint16_t nhosts )
-{
-    uint32_t id    = IP2LB( ip );
-    uint32_t right = hosts[nhosts - 1].id;
-    uint32_t left  = hosts[0].id;
-    uint16_t index = (right - left) - (right - id);
-    
-    if ( !hosts[index].port_resp ) {
-        hosts[index].port_resp = 1;
-    }
-    return;
-}
-
 void xscan_add_port( uint16_t port, port_t state, SCPorts *ports, uint16_t nports )
 {
     uint16_t index;
@@ -172,59 +166,4 @@ short is_scan_port( uint16_t port )
             return 0;
         }
     } return -1;
-}
-
-short is_scan_host( char *ip, struct xp_stats *stats )
-{
-    if ( stats->nhosts > 255 )
-    {
-        uint16_t size   = stats->nhosts;
-        uint16_t m      = 0;
-        uint16_t left   = 0;
-        uint16_t right  = size - 1;
-        uint32_t search = IP2LB( ip );
-        uint32_t item   = 0;
-
-        while ( left <= right )
-        {
-            m = (left + right) / 2;
-            if ( m < 0 || m > size ) {
-                return -1;
-            }
-            item = stats->hosts[m].id;
-
-            // we found the host and is currently in scan
-            if ( item == search && stats->hosts[m].in_scan ) {
-                // change host's state to up
-                if ( !stats->hosts[m].state ) {
-                    stats->hosts[m].state = 1;
-                }
-                // printf( "aaaa -> %d - %d\n", stats->hosts[m].in_scan, stats->hosts[m].state );
-                return 0;
-            }
-
-            if ( item < search ) {
-                left = m + 1;
-            }
-            else if ( item > search ) {
-                right = m - 1;
-            }
-        }
-        //printf( "%s - %u - %u\n", ip, IP2LB( ip ), stats->hosts[i++].id );
-        return -1;
-    }
-    
-    if ( stats->nhosts <= 255 )
-    {
-        for ( register uint16_t i = 0 ; i < stats->nhosts ; i++ ) {
-            if ( strcmp( ip, stats->hosts[i].ip ) == 0 && stats->hosts[i].in_scan ) {
-                if ( !stats->hosts[i].state ) {
-                    stats->hosts[i].state = 1;
-                }
-                // printf( "zzzz -> %d - %d\n", stats->hosts[i].in_scan, stats->hosts[i].state );
-                return 0;
-            }
-        }
-    }
-    return -1;
 }

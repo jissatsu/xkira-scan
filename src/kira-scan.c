@@ -14,25 +14,26 @@ void __xscan_initiate__( struct xp_stats *stats )
     
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
-        stats->nclosed   = 0x00;
-        stats->nopen     = 0x00;
-        stats->time      = 0.0;
-        stats->hosts[i].in_scan = 1;
-        
-        if ( xscan_scan_host( stats, setup.ip, stats->hosts[i].ip ) < 0 ) {
+        stats->nclosed  = 0x00;
+        stats->nopen    = 0x00;
+        stats->time     = 0.0;
+        LB2IP( stats->scan_ip, stats->current_host.ip );
+
+        if ( xscan_scan_host( stats, setup.ip, stats->current_host.ip ) < 0 ) {
             // free all stats' allocated memory before dying
             xscan_free_stats( stats );
             __die( "%s", xscan_errbuf );
         }
         // delay between each host's scanning task
-        mssleep( 0.5 );
+        mssleep( 0.4 );
+        stats->scan_ip++;
 
-        stats->current_host = stats->hosts[i];
-        stats->done = cpercent( (double) stats->tpkts, (double) stats->nsent );
-        printf( "[%0.2lf%%] - %s\n", stats->done, stats->hosts[i].ip );
+        // calculate scanning progress
+        stats->done = cpercent(
+            (double) stats->tpkts, (double) stats->nsent
+        );
+        printf( "[%0.2lf%%] - %s\n", stats->done, stats->current_host.ip );
         xscan_accum_stats( stats );
-        // not in scan anymore
-        stats->hosts[i].in_scan = 0;
     }
 }
 
@@ -144,6 +145,9 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 	    break;
     }
 
+    // reset current host's state and port_resp
+    stats->current_host.state     = 0x00;
+    stats->current_host.port_resp = 0x00;
     // send an icmp echo before the actual scanning in case the host is actually
     // up but has all ports filtered (which means that we won't receive any replies)
     if ( xscan_send_packet( IPPROTO_ICMP, setup.ip, dst_ip, 0x00, 0x00 ) < 0 ) {
@@ -155,7 +159,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             // set the current scan port state to default `0` (filtered)
             // if its actually not filtered it will be later set by
             // the scan receiver to either 1 (open) or 2 (closed)
-            stats->scanned_ports[i].state = 0;
+            stats->current_host.ports[i].state = 0;
         }
         if ( xscan_send_packet( proto, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
             return -1;
@@ -177,15 +181,16 @@ void xscan_accum_stats( struct xp_stats *stats )
     short pstat;
     // host is not up
     if ( !stats->current_host.state ) {
-        v_out( 
-            VWARN, 
-            "Host is either down or behind a firewall!\n", 
-            setup._ports.start, setup._ports.end );
+        v_out(
+            VWARN,
+            "Host is either down or behind a firewall!\n",
+            setup._ports.start,
+            setup._ports.end
+        );
         // push host to the `down` list
         pstat = xscan_push_host(
             XDOWN,
-            stats->current_host.ip,
-            NULL
+            stats->current_host
         );
 
         if ( pstat < 0 ) {
@@ -201,8 +206,7 @@ void xscan_accum_stats( struct xp_stats *stats )
         printf( "host is filtered!\n" );
         pstat = xscan_push_host(
             XFILTERED,
-            stats->current_host.ip,
-            NULL
+            stats->current_host
         );
 
         if ( pstat < 0 ) {
@@ -213,8 +217,7 @@ void xscan_accum_stats( struct xp_stats *stats )
         printf( "host is not filtered!\n" );
         pstat = xscan_push_host(
             XACTIVE,
-            stats->current_host.ip,
-            stats->scanned_ports
+            stats->current_host
         );
 
         if ( pstat < 0 ) {
@@ -226,16 +229,16 @@ void xscan_accum_stats( struct xp_stats *stats )
     v_ch( '\n' );
 }
 
-short xscan_push_host( xstate_t state, char *ip, const SCPorts *ports )
+short xscan_push_host( xstate_t state, SCHost host )
 {
-    SCBuffs *push_loc;
+    SChosts *push_loc;
     size_t newsize;
 
     switch ( state ) {
         case XDOWN:
             // down hosts buffer
-            push_loc = &stats.buffers[1];
-            if ( xscan_set_pushbuff( push_loc, ip, stats.ndown, stats.ndown + 1 ) < 0 ) {
+            push_loc = &stats.scanned_hosts[1];
+            if ( xscan_set_pushbuff( push_loc, host, stats.ndown, stats.ndown + 1 ) < 0 ) {
                 return -1;
             }
             ++stats.ndown;
@@ -243,8 +246,8 @@ short xscan_push_host( xstate_t state, char *ip, const SCPorts *ports )
 
         case XFILTERED:
             // filtered hosts buffer
-            push_loc = &stats.buffers[2];
-            if ( xscan_set_pushbuff( push_loc, ip, stats.nfiltered, stats.nfiltered + 1 ) < 0 ) {
+            push_loc = &stats.scanned_hosts[2];
+            if ( xscan_set_pushbuff( push_loc, host, stats.nfiltered, stats.nfiltered + 1 ) < 0 ) {
                 return -1;
             }
             ++stats.nfiltered;
@@ -252,8 +255,8 @@ short xscan_push_host( xstate_t state, char *ip, const SCPorts *ports )
             
         case XACTIVE:
             // active hosts buffer
-            push_loc = &stats.buffers[0];
-            if ( xscan_set_pushbuff( push_loc, ip, stats.nactive, stats.nactive + 1 ) < 0 ) {
+            push_loc = &stats.scanned_hosts[0];
+            if ( xscan_set_pushbuff( push_loc, host, stats.nactive, stats.nactive + 1 ) < 0 ) {
                 return -1;
             }
             ++stats.nactive;
@@ -263,21 +266,21 @@ short xscan_push_host( xstate_t state, char *ip, const SCPorts *ports )
 }
 
 // set the push buffer and expand it for the next item
-short xscan_set_pushbuff( SCBuffs *push_loc, const char *ip, uint16_t offset, uint16_t newsize )
+short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint16_t newsize )
 {
-    push_loc->buffer[offset] = (char *) malloc( 17 * sizeof( char ) );
+    push_loc->buffer[offset] = (SCHost *) calloc( 1, sizeof( SCHost ) );
     if ( !push_loc->buffer[offset] ) {
         sprintf(
-            xscan_errbuf,
+            xscan_errbuf, 
             "%s - %d", strerror( errno ),
             __LINE__
         );
         return -1;
     }
-    strcpy( push_loc->buffer[offset], ip );
-
+    memcpy( push_loc->buffer[offset], &stats.current_host, sizeof( SCHost ) );
+    
     // expand the current buffer
-    push_loc->buffer = (char **) realloc( push_loc->buffer, (newsize + 1) * sizeof( char * ) );
+    push_loc->buffer = (SCHost **) realloc( push_loc->buffer, (newsize + 1) * sizeof( SCHost * ) );
     if ( !push_loc->buffer ) {
         sprintf(
             xscan_errbuf, 

@@ -53,14 +53,6 @@ struct host
     short subnet;   /* subnet to scan */
 };
 
-typedef struct xscan_buffs
-{
-    char type[10];  /* buffer type (filtered, up, down) */
-    char head[10];  /* buffer heading [FILTERED], [UP], [DOWN] */
-    char **buffer;  /* buffer */
-}
-__attribute__((packed)) SCBuffs;
-
 typedef struct scanned_ports
 {
     uint16_t port;
@@ -68,15 +60,28 @@ typedef struct scanned_ports
 }
 __attribute__((packed)) SCPorts;
 
-typedef struct scan_hosts
+/*
+ * The current host that is in the scan
+ */
+typedef struct current_host
 {
     char ip[17];
-    uint32_t id;      /* host's id (its ip converted to 32-bit int) */
-    short state;      /* state of the host (up or down) default is `0` (down) */
-    short in_scan;    /* this value is used in the scan receiver to determine if the host is currently in scan (IT IS IMPORTANT!) */
-    short port_resp;  /* this is set to 1 if the host has sent atleast one RST (port is closed) or one ACK (port is open), 0 otherwise (all ports are filtered) assuming the host is up */
+    short state;        /* state of the host (up or down) default is `0` (down) */
+    short port_resp;    /* this is set to 1 if the host has sent atleast one RST (port is closed) or one ACK (port is open), 0 otherwise (all ports are filtered) assuming the host is up */
+    SCPorts *ports;     /* the scan ports for the host */
 }
-__attribute__((packed)) SCHosts;
+__attribute__((packed)) SCHost;
+
+/*
+ * A buffer to hold all the scanned hosts
+ */
+typedef struct scanned_hosts
+{
+    char type[10];    /* buffer type (filtered, up, down) */
+    char head[10];    /* buffer heading [FILTERED], [UP], [DOWN] */
+    SCHost **buffer;  /* buffer */
+}
+__attribute__((packed)) SChosts;
 
 // xscan config structure
 // xkira-scan-config.h
@@ -108,10 +113,8 @@ struct xp_stats
     uint32_t nsent;         /* number of packets sent (used to calculate progress percentage) */
     uint32_t tpkts;         /* total number of packets to send (used to calculate progress percentage) */
 
-    SCBuffs *buffers;       /* xscan buffers */
-    SCHosts *hosts;         /* a list of the hosts to scan */
-    SCPorts *scanned_ports; /* scanned ports on target host (scan_ip) */
-    SCHosts current_host;   /* host currently in scan */
+    SChosts *scanned_hosts; /* a buffer containing all the scanned hosts with their associated ports */
+    SCHost  current_host;   /* host currently in scan */
 
     double done;            /* progress percentage */
     double time;            /* time it took to perform the scan */
