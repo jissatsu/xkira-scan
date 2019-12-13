@@ -181,12 +181,12 @@ void xscan_accum_stats( struct xp_stats *stats )
     short pstat;
     // host is not up
     if ( !stats->current_host.state ) {
-        v_out(
-            VWARN,
-            "Host is either down or behind a firewall!\n",
-            setup._ports.start,
-            setup._ports.end
-        );
+        #ifdef DEBUG
+            v_out(
+                VWARN,
+                "Host is either down or behind a firewall!\n"
+            );
+        #endif
         // push host to the `down` list
         pstat = xscan_push_host(
             XDOWN,
@@ -203,7 +203,14 @@ void xscan_accum_stats( struct xp_stats *stats )
     if ( stats->current_host.state && !stats->current_host.port_resp )
     {
         // push host to the `filtered` list
-        printf( "host is filtered!\n" );
+        #ifdef DEBUG
+            v_out(
+                VWARN,
+                "Host has ports %d - %d filtered!\n",
+                setup._ports.start,
+                setup._ports.end
+            );
+        #endif
         pstat = xscan_push_host(
             XFILTERED,
             stats->current_host
@@ -214,7 +221,12 @@ void xscan_accum_stats( struct xp_stats *stats )
         }
     } else {
         // push host to the `up` list
-        printf( "host is not filtered!\n" );
+        #ifdef DEBUG
+            v_out(
+                VWARN,
+                "Host doesn't have all ports filtered!\n"
+            );
+        #endif
         pstat = xscan_push_host(
             XACTIVE,
             stats->current_host
@@ -289,6 +301,7 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
         );
         return -1;
     }
+    push_loc->buffer[offset + 1] = NULL;
     return 0;
 }
 

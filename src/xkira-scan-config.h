@@ -78,7 +78,6 @@ __attribute__((packed)) SCHost;
 typedef struct scanned_hosts
 {
     char type[10];    /* buffer type (filtered, up, down) */
-    char head[10];    /* buffer heading [FILTERED], [UP], [DOWN] */
     SCHost **buffer;  /* buffer */
 }
 __attribute__((packed)) SChosts;

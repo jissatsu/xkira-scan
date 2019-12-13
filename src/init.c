@@ -133,9 +133,6 @@ short __init_stats__( struct xp_stats *stats )
 
 short __xscan_init_buffs__( struct xp_stats *stats )
 {
-    char head[15];
-    size_t headlen;
-
     stats->scanned_hosts = (SChosts *) calloc( XSCAN_NBUFFERS, sizeof( SChosts ) );
     if ( !stats->scanned_hosts ) {
         sprintf(
@@ -155,21 +152,8 @@ short __xscan_init_buffs__( struct xp_stats *stats )
             );
             return -1;
         }
-    }
-
-    for ( register short i = 0 ; i < XSCAN_NBUFFERS ; i++ )
-    {
+        stats->scanned_hosts[i].buffer[0] = NULL;
         strcpy( stats->scanned_hosts[i].type, buffs[i] );
-        headlen = strlen( buffs[i] );
-        head[0] = '[';
-        strncpy(
-            &head[1],
-            buffs[i],
-            strlen( buffs[i] )
-        );
-        head[headlen + 1] =  ']';
-        head[headlen + 2] = '\0';
-        strcpy( stats->scanned_hosts[i].head, head );
     }
     return 0;
 }

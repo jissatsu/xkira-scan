@@ -3,7 +3,10 @@
 void xscan_print_hosts( struct xp_stats *stats )
 {
     // list all the hosts that are down
-    printf( "\t\t%s\n", stats->scanned_hosts[1].head );
+    char *type;
+
+    type = xsc_upper( stats->scanned_hosts[1].type );
+    printf( "\n\t\t[%s]\n", type );
     if ( stats->ndown ) {
         for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
             v_out(
@@ -18,9 +21,11 @@ void xscan_print_hosts( struct xp_stats *stats )
     if ( !stats->ndown ) {
         printf( "\t\t--NONE--\n\n" );
     }
+    free( type );
 
     // list all the hosts that have the scan ports filtered
-    printf( "\t\t%s\n", stats->scanned_hosts[2].head );
+    type = xsc_upper( stats->scanned_hosts[2].type );
+    printf( "\n\t\t[%s]\n", type );
     if ( stats->nfiltered ) {
         for ( register uint16_t i = 0 ; i < stats->nfiltered ; i++ ) {
             v_out(
@@ -37,6 +42,7 @@ void xscan_print_hosts( struct xp_stats *stats )
     if ( !stats->nfiltered ) {
         printf( "\t\t--NONE--\n\n" );
     }
+    free( type );
 }
 
 void xscan_free_stats( struct xp_stats *stats )

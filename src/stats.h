@@ -2,6 +2,7 @@
 #define __KIRA_STATS_H 1
 
 #include <stdio.h>
+#include "libs/xscan_str.h"
 #include "output/output.h"
 #include "xkira-scan-config.h"
 
