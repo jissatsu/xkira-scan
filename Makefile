@@ -2,12 +2,17 @@ CC=gcc
 RN=-Wall
 LIBS=-lnet -lpthread -lpcap -lxstr
 LDIR=-Lsrc/libs
-ODIR=src/obj
+ODIR=obj
 DEBUG=-DDEBUG
 EXECPATH=/usr/bin
 EXEC=kira-scan
 
 obj:
+	@if [ -d $(ODIR) ]; then\
+		rm -rf $(ODIR);\
+	fi
+	mkdir $(ODIR);
+
 	$(CC) $(RN) -c src/main.c -o $(ODIR)/main.o -DDEBUG
 	$(CC) $(RN) -c src/banner.c -o $(ODIR)/banner.o -DDEBUG
 	$(CC) $(RN) -c src/kira-scan.c -o $(ODIR)/kira-scan.o -DDEBUG
