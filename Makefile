@@ -14,16 +14,17 @@ obj:
 	mkdir $(ODIR);
 
 	$(CC) $(RN) -c src/main.c -o $(ODIR)/main.o -DDEBUG
-	$(CC) $(RN) -c src/banner.c -o $(ODIR)/banner.o -DDEBUG
+	$(CC) $(RN) -c src/banner.c -o $(ODIR)/banner.o
 	$(CC) $(RN) -c src/kira-scan.c -o $(ODIR)/kira-scan.o -DDEBUG
 	$(CC) $(RN) -c src/init.c -o $(ODIR)/init.o -DDEBUG
 	$(CC) $(RN) -c src/xscan_sniffer.c -o $(ODIR)/xscan_sniffer.o -DDEBUG
-	$(CC) $(RN) -c src/stats.c -o $(ODIR)/stats.o -DDEBUG
-	$(CC) $(RN) -c src/sleep.c -o $(ODIR)/sleep.o -DDEBUG
-	$(CC) $(RN) -c src/net.c -o $(ODIR)/net.o -DDEBUG
-	$(CC) $(RN) -c src/output/output.c -o $(ODIR)/output.o -DDEBUG
+	$(CC) $(RN) -c src/stats.c -o $(ODIR)/stats.o
+	$(CC) $(RN) -c src/sleep.c -o $(ODIR)/sleep.o
+	$(CC) $(RN) -c src/net.c -o $(ODIR)/net.o
+	$(CC) $(RN) -c src/output/output.c -o $(ODIR)/output.o
 
 all:
+	make obj;
 	$(CC) $(RN) \
 	$(ODIR)/main.o \
 	$(ODIR)/banner.o \
