@@ -295,7 +295,7 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
     push_loc->buffer = (SCHost **) realloc( push_loc->buffer, (newsize + 1) * sizeof( SCHost * ) );
     if ( !push_loc->buffer ) {
         sprintf(
-            xscan_errbuf, 
+            xscan_errbuf,
             "%s - %d", strerror( errno ),
             __LINE__
         );

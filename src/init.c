@@ -110,16 +110,17 @@ short __init_stats__( struct xp_stats *stats )
     {
         if ( setup._ports.range ) {
             stats->nports = setup._ports.end - setup._ports.start;
+            // total number of packets
+            // multiply by 2 because of the additional icmp probe
+            stats->tpkts = (stats->nhosts * stats->nports ) + (stats->nhosts * 2);
         } else {
             stats->nports = 1;
+            stats->tpkts = (stats->nhosts * stats->nports ) + stats->nhosts;
         }
         
         if ( __xscan_init_ports__( stats ) < 0 ) {
             return -1;
         }
-        // total number of packets
-        // multiply by 2 because of the additional icmp probe on line 228
-        stats->tpkts = (stats->nhosts * stats->nports ) * 2;
     }
     
     // no ports
