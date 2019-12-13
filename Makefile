@@ -1,5 +1,6 @@
 CC=gcc
 RN=-Wall
+ARCH="$(shell uname -m)"
 LIBS=-lnet -lpthread -lpcap -lxstr
 LDIR=-Lsrc/libs
 ODIR=obj
@@ -42,3 +43,5 @@ all:
 
 clean:
 	rm -f $(ODIR)/*.o
+
+.PHONY: obj, all, clean
