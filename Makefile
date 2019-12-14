@@ -1,6 +1,5 @@
 CC=gcc
 RN=-Wall
-ARCH="$(shell uname -m)"
 LIBS=-lnet -lpthread -lpcap -lxstr
 LDIR=-Lsrc/libs
 ODIR=obj
@@ -8,11 +7,10 @@ DEBUG=-DDEBUG
 EXECPATH=/usr/bin
 EXEC=kira-scan
 
-obj:
-	@if [ -d $(ODIR) ]; then\
-		rm -rf $(ODIR);\
+objs:
+	@if [ ! -d $(ODIR) ]; then\
+		mkdir $(ODIR);\
 	fi
-	mkdir $(ODIR);
 
 	$(CC) $(RN) -c src/main.c -o $(ODIR)/main.o -DDEBUG
 	$(CC) $(RN) -c src/banner.c -o $(ODIR)/banner.o
@@ -25,7 +23,7 @@ obj:
 	$(CC) $(RN) -c src/output/output.c -o $(ODIR)/output.o
 
 all:
-	make obj;
+	make objs;
 	$(CC) $(RN) \
 	$(ODIR)/main.o \
 	$(ODIR)/banner.o \
@@ -44,4 +42,4 @@ all:
 clean:
 	rm -f $(ODIR)/*.o
 
-.PHONY: obj, all, clean
+.PHONY: objs, all, clean
