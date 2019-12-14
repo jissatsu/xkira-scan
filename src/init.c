@@ -134,6 +134,11 @@ short __init_stats__( struct xp_stats *stats )
 
 short __xscan_init_buffs__( struct xp_stats *stats )
 {
+    char *buffs[3] = {
+        "up",
+        "down",
+        "filtered"
+    };
     stats->scanned_hosts = (SChosts *) calloc( XSCAN_NBUFFERS, sizeof( SChosts ) );
     if ( !stats->scanned_hosts ) {
         sprintf(

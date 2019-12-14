@@ -27,8 +27,6 @@ void  xscan_accum_stats( struct xp_stats *stats );
 void  __xscan_initiate__( struct xp_stats *stats );
 void  __End__( int sig );
 
-char * xscan_portstate_expl( port_t state );
-
 #ifdef __cplusplus
 }
 #endif

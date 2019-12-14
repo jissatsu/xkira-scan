@@ -20,12 +20,6 @@ pthread_t thread;
 // xkira-scan-config.h
 char xscan_errbuf[0xFF];
 
-static char *buffs[3] = {
-    "up",
-    "down",
-    "filtered"
-};
-
 typedef enum { X_SYN, X_ICMP  } scan_t;
 typedef enum { XDOWN, XACTIVE, XFILTERED } xstate_t;
 typedef enum { XOPEN = 1, XCLOSED } port_t;

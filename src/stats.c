@@ -6,7 +6,7 @@ void xscan_print_hosts( struct xp_stats *stats )
     char *type;
 
     type = xsc_upper( stats->scanned_hosts[1].type );
-    printf( "\n\t\t[%s]\n", type );
+    printf( "\n\t\t [%s]\n", type );
     if ( stats->ndown ) {
         for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
             v_out(
@@ -43,6 +43,86 @@ void xscan_print_hosts( struct xp_stats *stats )
         printf( "\t\t--NONE--\n\n" );
     }
     free( type );
+
+    type = xsc_upper( stats->scanned_hosts[0].type );
+    printf( "\n\t\t  [%s]\n", type );
+    if ( stats->nactive ) {
+        for ( register uint16_t i = 0 ; i < stats->nactive ; i++ ) {
+            v_out(
+                VINF,
+                "[%s]\n",
+                stats->scanned_hosts[0].buffer[i]->ip
+            );
+            v_out(
+                VINF,
+                "Ports open     -> %d!\n",
+                stats->nopen
+            );
+            v_out(
+                VINF,
+                "Ports closed   -> %d!\n",
+                stats->nclosed
+            );
+            v_out(
+                VINF,
+                "Ports filtered -> %d!\n",
+                stats->nfiltered
+            );
+            v_ch( '\n' );
+
+            xscan_print_ports(
+                stats->scanned_hosts[0].buffer[i]->ports,
+                stats->nports
+            );
+            v_ch( '\n' );
+            v_ch( '\n' );
+        }
+    }
+    if ( !stats->nactive ) {
+        printf( "\t\t--NONE--\n\n" );
+    }
+    free( type );
+}
+
+void xscan_print_ports( SCPorts *ports, uint16_t nports )
+{
+    char *serv;
+    char *state;
+    
+    printf( "\t[PORT]   [SERVICE]   [STATE]\n" );
+    for ( register uint16_t i = 0 ; i < nports + 1 ; i++ )
+    {
+        state = xscan_portstate_expl( ports[i].state );
+        serv  = portservice( ports[i].port );
+        printf( "\t%-8d %-11s %-10s\n", ports[i].port, serv, state );
+    }
+    free( serv );
+    free( state );
+}
+
+char * xscan_portstate_expl( port_t state )
+{
+    char *state_expl;
+
+    state_expl = (char *) calloc( 10, sizeof( char ) );
+    if ( !state_expl ) {
+        return NULL;
+    }
+    
+    switch ( state ) {
+        case XCLOSED:
+            strcpy( state_expl, "closed" );
+            break;
+
+        case XOPEN:
+            strcpy( state_expl, "open" );
+            break;
+
+        default:
+            strcpy( state_expl, "filtered" );
+            break;
+    }
+    return state_expl;
 }
 
 void xscan_free_stats( struct xp_stats *stats )

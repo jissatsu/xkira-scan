@@ -244,7 +244,6 @@ void xscan_accum_stats( struct xp_stats *stats )
 short xscan_push_host( xstate_t state, SCHost host )
 {
     SChosts *push_loc;
-    size_t newsize;
 
     switch ( state ) {
         case XDOWN:
@@ -289,7 +288,17 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
         );
         return -1;
     }
-    memcpy( push_loc->buffer[offset], &stats.current_host, sizeof( SCHost ) );
+
+    // allocate memory for the ports
+    push_loc->buffer[offset]->ports = (SCPorts *) calloc( stats.nports + 1, sizeof( SCPorts ) );
+    if ( !push_loc->buffer[offset]->ports ) {
+        sprintf(
+            xscan_errbuf, 
+            "%s - %d", strerror( errno ),
+            __LINE__
+        );
+        return -1;
+    }
     
     // expand the current buffer
     push_loc->buffer = (SCHost **) realloc( push_loc->buffer, (newsize + 1) * sizeof( SCHost * ) );
@@ -302,32 +311,21 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
         return -1;
     }
     push_loc->buffer[offset + 1] = NULL;
-    return 0;
-}
 
-char * xscan_portstate_expl( port_t state )
-{
-    char *state_expl;
-
-    state_expl = (char *) calloc( 10, sizeof( char ) );
-    if ( !state_expl ) {
-        return NULL;
-    }
+    memcpy(
+        push_loc->buffer[offset]->ip,
+        stats.current_host.ip,
+        strlen( stats.current_host.ip ) + 1
+    );
     
-    switch ( state ) {
-        case XCLOSED:
-            strcpy( state_expl, "closed" );
-            break;
+    push_loc->buffer[offset]->ip[-1] = '\0';
 
-        case XOPEN:
-            strcpy( state_expl, "open" );
-            break;
-
-        default:
-            strcpy( state_expl, "filtered" );
-            break;
-    }
-    return state_expl;
+    memcpy(
+        push_loc->buffer[offset]->ports,
+        stats.current_host.ports,
+        (stats.nports + 1) * sizeof( SCPorts )
+    );
+    return 0;
 }
 
 void __End__( int sig )

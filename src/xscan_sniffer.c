@@ -3,19 +3,16 @@
 void packet_handler( u_char *args, const struct pcap_pkthdr *header, 
                      const u_char *packet )
 {   
-    char scan_ip[20];
     char src_ip[20];
     char dst_ip[20];
     short proto;
     uint16_t src_port;
     uint16_t dst_port;
-    uint32_t dec_ip;
     struct ip *ip = (struct ip *) (packet + 14);
     struct tcphdr *tcp;
     struct icmp *icmp;
     struct xp_stats *stats = (struct xp_stats *) args;
     
-    //LB2IP( stats->scan_ip, scan_ip );
     strcpy( src_ip, inet_ntoa( ip->ip_src ) );
     strcpy( dst_ip, inet_ntoa( ip->ip_dst ) );
 
@@ -26,9 +23,6 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
     if ( setup.type == X_ICMP ) {
         proto = IPPROTO_ICMP;
     }
-
-    // source ip in decimal format
-    dec_ip = IP2LB( src_ip );
 
     // the packet must be for us and the source ip must be same as the current host's ip
     if ( strcmp( dst_ip, setup.ip ) == 0 && strcmp( src_ip, stats->current_host.ip ) == 0 )
