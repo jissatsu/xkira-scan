@@ -301,31 +301,37 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
     }
     
     // expand the current buffer
-    push_loc->buffer = (SCHost **) realloc( push_loc->buffer, (newsize + 1) * sizeof( SCHost * ) );
+    push_loc->buffer = xscan_expand_buff( push_loc->buffer, newsize + 1 );
     if ( !push_loc->buffer ) {
-        sprintf(
-            xscan_errbuf,
-            "%s - %d", strerror( errno ),
-            __LINE__
-        );
         return -1;
     }
     push_loc->buffer[offset + 1] = NULL;
-
-    memcpy(
-        push_loc->buffer[offset]->ip,
-        stats.current_host.ip,
-        strlen( stats.current_host.ip ) + 1
-    );
-    
-    push_loc->buffer[offset]->ip[-1] = '\0';
-
-    memcpy(
-        push_loc->buffer[offset]->ports,
-        stats.current_host.ports,
-        (stats.nports + 1) * sizeof( SCPorts )
-    );
+    xscan_copy_buff( push_loc->buffer[offset], &stats.current_host );
     return 0;
+}
+
+// expands buffer
+// sets `xscan_errbuf` on error and returns -1
+SCHost ** xscan_expand_buff( SCHost **buff, size_t size )
+{
+    SCHost **newbuf;
+
+    newbuf = (SCHost **) realloc( buff, size * sizeof( SCHost * ) );
+    if ( !newbuf ) {
+        sprintf(
+            xscan_errbuf,
+            "%s - %d", strerror( errno ), __LINE__
+        );
+        return NULL;
+    }
+    return newbuf;
+}
+
+void xscan_copy_buff( SCHost *dbuff, const SCHost *sbuff )
+{
+    memcpy( dbuff->ip, sbuff->ip, strlen( sbuff->ip ) + 1 );
+    dbuff->ip[-1] = '\0';
+    memcpy( dbuff->ports, sbuff->ports, (stats.nports + 1) * sizeof( SCPorts ) );
 }
 
 void __End__( int sig )

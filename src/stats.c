@@ -55,17 +55,17 @@ void xscan_print_hosts( struct xp_stats *stats )
             );
             v_out(
                 VINF,
-                "Ports open     -> %d!\n",
+                "Ports open     -> %d\n",
                 stats->nopen
             );
             v_out(
                 VINF,
-                "Ports closed   -> %d!\n",
+                "Ports closed   -> %d\n",
                 stats->nclosed
             );
             v_out(
                 VINF,
-                "Ports filtered -> %d!\n",
+                "Ports filtered -> %d\n",
                 stats->nfiltered
             );
             v_ch( '\n' );

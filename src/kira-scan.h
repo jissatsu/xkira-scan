@@ -21,11 +21,14 @@ short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport,
 short  xscan_push_host( xstate_t state, SCHost host );
 short  xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint16_t newsize );
 
+void  xscan_copy_buff( SCHost *dbuff, const SCHost *sbuff );
 void  xscan_print_ports( SCPorts *ports, uint16_t nports );
 void  xscan_reset_stats( struct xp_stats *stats );
 void  xscan_accum_stats( struct xp_stats *stats );
 void  __xscan_initiate__( struct xp_stats *stats );
 void  __End__( int sig );
+
+SCHost ** xscan_expand_buff( SCHost **buff, size_t size );
 
 #ifdef __cplusplus
 }
