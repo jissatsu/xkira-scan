@@ -130,10 +130,10 @@ void xscan_add_port( uint16_t port, port_t state, SCPorts *ports, uint16_t nport
 
     switch ( state ) {
         case XCLOSED:
-            stats.nclosed++;
+            stats.current_host.nclosed++;
             break;
         case XOPEN:
-            stats.nopen++;
+            stats.current_host.nopen++;
             break;
     }
 

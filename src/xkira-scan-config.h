@@ -61,6 +61,9 @@ typedef struct current_host
     char ip[17];
     short state;        /* state of the host (up or down) default is `0` (down) */
     short port_resp;    /* this is set to 1 if the host has sent atleast one RST (port is closed) or one ACK (port is open), 0 otherwise (all ports are filtered) assuming the host is up */
+    uint16_t nclosed;   /* number of closed ports */
+    uint16_t nopen;     /* number of open ports */
+    uint16_t nfiltered; /* number of filtered ports */
     SCPorts *ports;     /* the scan ports for the host */
 }
 __attribute__((packed)) SCHost;
@@ -98,8 +101,6 @@ struct xp_stats
     uint16_t ndown;         /* number of hosts that are down */
     uint16_t nfiltered;     /* number of hosts that have all scanned ports filtered */
     uint16_t nactive;       /* number of hosts that are active (those that have responded on atleast one port) */
-    uint16_t nclosed;       /* number of closed ports */
-    uint16_t nopen;         /* number of open ports */
 
     uint32_t scan_ip;       /* next ip address to scan */
     uint32_t nsent;         /* number of packets sent (used to calculate progress percentage) */

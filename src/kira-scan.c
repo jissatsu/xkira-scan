@@ -14,9 +14,7 @@ void __xscan_initiate__( struct xp_stats *stats )
     
     for ( uint32_t i = 0 ; i < stats->nhosts ; i++ )
     {
-        stats->nclosed  = 0x00;
-        stats->nopen    = 0x00;
-        stats->time     = 0.0;
+        stats->time = 0.0;
         LB2IP( stats->scan_ip, stats->current_host.ip );
 
         if ( xscan_scan_host( stats, setup.ip, stats->current_host.ip ) < 0 ) {
@@ -146,8 +144,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
     }
 
     // reset current host's state and port_resp
-    stats->current_host.state     = 0x00;
-    stats->current_host.port_resp = 0x00;
+    xscan_reset_host( &stats->current_host );
     // send an icmp echo before the actual scanning in case the host is actually
     // up but has all ports filtered (which means that we won't receive any replies)
     if ( xscan_send_packet( IPPROTO_ICMP, setup.ip, dst_ip, 0x00, 0x00 ) < 0 ) {
@@ -303,6 +300,8 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
     if ( !push_loc->buffer ) {
         return -1;
     }
+
+    // set the next location in the buffer to NULL
     push_loc->buffer[offset + 1] = NULL;
     xscan_copy_buff( push_loc->buffer[offset], &host );
     return 0;
@@ -327,9 +326,32 @@ SCHost ** xscan_expand_buff( SCHost **buff, size_t size )
 
 void xscan_copy_buff( SCHost *dbuff, const SCHost *sbuff )
 {
+    uint16_t nports;
+
+    if ( stats.nports > 1 ) {
+        nports = stats.nports + 1;
+    } else {
+        nports = stats.nports;
+    }
+
     memcpy( dbuff->ip, sbuff->ip, strlen( sbuff->ip ) + 1 );
-    dbuff->ip[-1] = '\0';
-    memcpy( dbuff->ports, sbuff->ports, (stats.nports + 1) * sizeof( SCPorts ) );
+    dbuff->ip[-1]    = '\0';
+    dbuff->nclosed   = sbuff->nclosed;
+    dbuff->nopen     = sbuff->nopen;
+    dbuff->nfiltered = nports - (sbuff->nclosed + sbuff->nopen);
+    memcpy(
+        dbuff->ports, sbuff->ports,
+        (stats.nports + 1) * sizeof( SCPorts )
+    );
+}
+
+void xscan_reset_host( SCHost *current_host )
+{
+    current_host->state     = 0x00;
+    current_host->port_resp = 0x00;
+    current_host->nclosed   = 0x00;
+    current_host->nopen     = 0x00;
+    current_host->nfiltered = 0x00;
 }
 
 void __End__( int sig )

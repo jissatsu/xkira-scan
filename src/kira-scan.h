@@ -21,6 +21,7 @@ short  xscan_init_packet( int proto, char *src_ip, char *dst_ip, uint16_t sport,
 short  xscan_push_host( xstate_t state, SCHost host );
 short  xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint16_t newsize );
 
+void  xscan_reset_host( SCHost *current_host );
 void  xscan_copy_buff( SCHost *dbuff, const SCHost *sbuff );
 void  xscan_print_ports( SCPorts *ports, uint16_t nports );
 void  xscan_reset_stats( struct xp_stats *stats );

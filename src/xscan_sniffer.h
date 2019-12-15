@@ -1,11 +1,16 @@
 #ifndef __XSCAN_SNIFFER_H
 #define __XSCAN_SNIFFER_H 1
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/ip_icmp.h>
 #include <pcap.h>
 #include <pthread.h>
 #include "output/output.h"
 #include "xkira-scan-config.h"
-#include "packet/include.h"
 
 #ifdef __cplusplus
 extern "C" {
