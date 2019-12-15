@@ -236,8 +236,6 @@ void xscan_accum_stats( struct xp_stats *stats )
             __die( "%s", xscan_errbuf );
         }
     }
-
-    // printf( "\t%-7d  %-8s  %s\n", port, service, state );
     v_ch( '\n' );
 }
 
@@ -249,7 +247,7 @@ short xscan_push_host( xstate_t state, SCHost host )
         case XDOWN:
             // down hosts buffer
             push_loc = &stats.scanned_hosts[1];
-            if ( xscan_set_pushbuff( push_loc, host, stats.ndown, stats.ndown + 1 ) < 0 ) {
+            if ( xscan_set_pushbuff( push_loc, host, stats.ndown, stats.ndown + 2 ) < 0 ) {
                 return -1;
             }
             ++stats.ndown;
@@ -258,7 +256,7 @@ short xscan_push_host( xstate_t state, SCHost host )
         case XFILTERED:
             // filtered hosts buffer
             push_loc = &stats.scanned_hosts[2];
-            if ( xscan_set_pushbuff( push_loc, host, stats.nfiltered, stats.nfiltered + 1 ) < 0 ) {
+            if ( xscan_set_pushbuff( push_loc, host, stats.nfiltered, stats.nfiltered + 2 ) < 0 ) {
                 return -1;
             }
             ++stats.nfiltered;
@@ -267,7 +265,7 @@ short xscan_push_host( xstate_t state, SCHost host )
         case XACTIVE:
             // active hosts buffer
             push_loc = &stats.scanned_hosts[0];
-            if ( xscan_set_pushbuff( push_loc, host, stats.nactive, stats.nactive + 1 ) < 0 ) {
+            if ( xscan_set_pushbuff( push_loc, host, stats.nactive, stats.nactive + 2 ) < 0 ) {
                 return -1;
             }
             ++stats.nactive;
@@ -301,12 +299,12 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
     }
     
     // expand the current buffer
-    push_loc->buffer = xscan_expand_buff( push_loc->buffer, newsize + 1 );
+    push_loc->buffer = xscan_expand_buff( push_loc->buffer, newsize );
     if ( !push_loc->buffer ) {
         return -1;
     }
     push_loc->buffer[offset + 1] = NULL;
-    xscan_copy_buff( push_loc->buffer[offset], &stats.current_host );
+    xscan_copy_buff( push_loc->buffer[offset], &host );
     return 0;
 }
 

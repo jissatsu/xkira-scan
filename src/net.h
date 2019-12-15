@@ -12,6 +12,7 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <errno.h>
+#include "inline.h"
 #include "xkira-scan-config.h"
 
 #ifdef __cplusplus

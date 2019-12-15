@@ -92,9 +92,13 @@ void xscan_print_ports( SCPorts *ports, uint16_t nports )
     printf( "\t[PORT]   [SERVICE]   [STATE]\n" );
     for ( register uint16_t i = 0 ; i < nports + 1 ; i++ )
     {
-        state = xscan_portstate_expl( ports[i].state );
-        serv  = portservice( ports[i].port );
-        printf( "\t%-8d %-11s %-10s\n", ports[i].port, serv, state );
+        // have we reached the last port ?
+        if ( ports[i].port != 0 )
+        {
+            state = xscan_portstate_expl( ports[i].state );
+            serv  = portservice( ports[i].port );
+            printf( "\t%-8d %-11s %-10s\n", ports[i].port, serv, state );
+        }
     }
     free( serv );
     free( state );

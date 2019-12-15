@@ -1,10 +1,9 @@
 #ifndef __KIRA_SCAN_SETUP_H
 #define __KIRA_SCAN_SETUP_H 1
 
+#include <stdio.h>
+#include <string.h>
 #include <stdint.h>
-#include "packet/ipv4.h"
-#include "packet/icmp.h"
-#include "packet/tcp.h"
 
 #ifdef __cplusplus
 extern "C" {

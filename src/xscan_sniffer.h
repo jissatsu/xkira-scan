@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include "output/output.h"
 #include "xkira-scan-config.h"
+#include "packet/include.h"
 
 #ifdef __cplusplus
 extern "C" {
