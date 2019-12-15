@@ -6,6 +6,11 @@ void __xscan_initiate__( struct xp_stats *stats )
         __die( "%s", xscan_errbuf );
     }
 
+    LB2IP( stats->scan_ip, stats->current_host.ip );
+    v_out( VINF, "Initiated SYN scan!\n" );
+    v_out( VINF, "Scanning subnet - /%d\n", setup._host.subnet );
+    v_out( VINF, "Starting from host [%s]\n", stats->current_host.ip );
+
     #ifdef DEBUG
         v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
         v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
@@ -30,9 +35,10 @@ void __xscan_initiate__( struct xp_stats *stats )
         stats->done = cpercent(
             (double) stats->tpkts, (double) stats->nsent
         );
-        printf( "[%0.2lf%%] - %s\n", stats->done, stats->current_host.ip );
+        printf( "\rScanning progress - [%0.2lf%%]", stats->done );
         xscan_accum_stats( stats );
     }
+    v_ch( '\n' );
 }
 
 /* Initialize the packet based on the protocol */
@@ -181,7 +187,8 @@ void xscan_accum_stats( struct xp_stats *stats )
         #ifdef DEBUG
             v_out(
                 VWARN,
-                "Host is either down or behind a firewall!\n"
+                "Host [%s] is either down or behind a firewall!\n",
+                stats->current_host.ip
             );
         #endif
         // push host to the `down` list
@@ -203,7 +210,8 @@ void xscan_accum_stats( struct xp_stats *stats )
         #ifdef DEBUG
             v_out(
                 VWARN,
-                "Host has ports %d - %d filtered!\n",
+                "Host [%s] has ports %d - %d filtered!\n",
+                stats->current_host.ip,
                 setup._ports.start,
                 setup._ports.end
             );
@@ -221,7 +229,8 @@ void xscan_accum_stats( struct xp_stats *stats )
         #ifdef DEBUG
             v_out(
                 VWARN,
-                "Host doesn't have all ports filtered!\n"
+                "Host [%s] doesn't have all ports filtered!\n",
+                stats->current_host.ip
             );
         #endif
         pstat = xscan_push_host(

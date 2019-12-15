@@ -12,11 +12,11 @@ objs:
 		mkdir $(ODIR);\
 	fi
 
-	$(CC) $(RN) -c src/main.c -o $(ODIR)/main.o -DDEBUG
+	$(CC) $(RN) -c src/main.c -o $(ODIR)/main.o
 	$(CC) $(RN) -c src/banner.c -o $(ODIR)/banner.o
-	$(CC) $(RN) -c src/kira-scan.c -o $(ODIR)/kira-scan.o -DDEBUG
-	$(CC) $(RN) -c src/init.c -o $(ODIR)/init.o -DDEBUG
-	$(CC) $(RN) -c src/xscan_sniffer.c -o $(ODIR)/xscan_sniffer.o -DDEBUG
+	$(CC) $(RN) -c src/kira-scan.c -o $(ODIR)/kira-scan.o
+	$(CC) $(RN) -c src/init.c -o $(ODIR)/init.o
+	$(CC) $(RN) -c src/xscan_sniffer.c -o $(ODIR)/xscan_sniffer.o
 	$(CC) $(RN) -c src/stats.c -o $(ODIR)/stats.o
 	$(CC) $(RN) -c src/sleep.c -o $(ODIR)/sleep.o
 	$(CC) $(RN) -c src/net.c -o $(ODIR)/net.o

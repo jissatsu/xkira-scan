@@ -16,7 +16,6 @@ void xscan_print_hosts( struct xp_stats *stats )
             );
         }
         v_ch( '\n' );
-        v_ch( '\n' );
     }
     if ( !stats->ndown ) {
         printf( "\t\t--NONE--\n\n" );
@@ -36,7 +35,6 @@ void xscan_print_hosts( struct xp_stats *stats )
                 setup._ports.end
             );
         }
-        v_ch( '\n' );
         v_ch( '\n' );
     }
     if ( !stats->nfiltered ) {
