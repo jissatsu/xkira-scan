@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-#include <netinet/ip_icmp.h>
 #include <pcap.h>
 #include <pthread.h>
 #include "output/output.h"

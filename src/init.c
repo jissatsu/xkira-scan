@@ -11,51 +11,31 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
     }
     o_set_tty( setup.tty );
 
-    if ( strcmp( args->type, "icmp" ) != 0 && 
-         strcmp( args->type, "syn" )  != 0 ) {
-             sprintf( xscan_errbuf, "Invalid scan type!" );
-             return -1;
+    if ( !args->ports ) {
+        sprintf(
+            xscan_errbuf,
+            "No port or port-range specified for SYN scan!"
+        );
+        return -1;
     }
 
-    if ( strcmp( args->type, "icmp" ) == 0 ) {
-        if ( args->ports ) {
-            sprintf(
-                xscan_errbuf,
-                "Can't use ICMP for port scanning... Use SYN instead!"
-            );
-            return -1;
-        }
-        setup.type = X_ICMP;
-    } else {
-        if ( !args->ports ) {
-            sprintf(
-                xscan_errbuf,
-                "No port or port-range specified for SYN scan!"
-            );
-            return -1;
-        }
-        setup.type = X_SYN;
+    if ( xscan_set_ports( args->ports, &(setup._ports) ) != 0 ) {
+        sprintf(
+            xscan_errbuf,
+            "Invalid port argument!"
+        );
+        return -1;
     }
 
-    if ( args->ports ) {
-        if ( xscan_set_ports( args->ports, &(setup._ports) ) != 0 ) {
-            sprintf(
-                xscan_errbuf,
-                "Invalid port argument!"
-            );
-            return -1;
-        }
-
-        if ( xscan_validate_ports( &(setup._ports) ) != 0 ) {
-            sprintf(
-                xscan_errbuf,
-                "Invalid port argument!"
-            );
-            return -1;
-        }
+    if ( xscan_validate_ports( &(setup._ports) ) != 0 ) {
+        sprintf(
+            xscan_errbuf,
+            "Invalid port argument!"
+        );
+        return -1;
     }
     
-    if ( xscan_hostinfo( args->host, &setup ) != 0 ){
+    if ( xscan_hostinfo( args->host, &setup ) != 0 ) {
         sprintf(
             xscan_errbuf,
             "Invalid host argument!"
@@ -79,7 +59,6 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
         setup.on = 1;
     }
     #ifdef DEBUG
-        v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->type",   setup.type );
         v_out( VDEBUG, "%s: %s -> %d\n",   __FILE__, "Setup->on",     setup.on );
         v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host name",     setup._host.name );
         v_out( VDEBUG, "%s: %s -> %s\n",   __FILE__, "Host ip",       setup._host.ip );
@@ -96,7 +75,8 @@ short __init_stats__( struct xp_stats *stats )
         return -1;
     }
 
-    if ( setup._host.subnet ) {
+    if ( setup._host.subnet )
+    {
         stats->scan_ip = net_off( setup._host.ip, setup._host.subnet ); /* start ip address e.g 192.168.0.1 */
         stats->nhosts  = calc_nhosts( setup._host.subnet );
         stats->scan_ip++;
@@ -106,28 +86,19 @@ short __init_stats__( struct xp_stats *stats )
     }
 
     // calculate number of ports and packets to scan
-    if ( setup.type == X_SYN )
+    if ( setup._ports.range )
     {
-        if ( setup._ports.range ) {
-            stats->nports = setup._ports.end - setup._ports.start;
-            // total number of packets
-            // multiply by 2 because of the additional icmp probe
-            stats->tpkts = (stats->nhosts * stats->nports ) + (stats->nhosts * 2);
-        } else {
-            stats->nports = 1;
-            stats->tpkts = (stats->nhosts * stats->nports ) + stats->nhosts;
-        }
-        
-        if ( __xscan_init_ports__( stats ) < 0 ) {
-            return -1;
-        }
+        stats->nports = setup._ports.end - setup._ports.start;
+        // total number of packets
+        // multiply by 2 because of the additional icmp probe
+        stats->tpkts = (stats->nhosts * stats->nports ) + (stats->nhosts * 2);
+    } else {
+        stats->nports = 1;
+        stats->tpkts = (stats->nhosts * stats->nports ) + stats->nhosts;
     }
     
-    // no ports
-    if ( setup.type == X_ICMP ) {
-        stats->nports = 0x00;
-        // total number of packets
-        stats->tpkts  = stats->nhosts * 1;
+    if ( __xscan_init_ports__( stats ) < 0 ) {
+        return -1;
     }
     return 0;
 }
@@ -135,7 +106,7 @@ short __init_stats__( struct xp_stats *stats )
 short __xscan_init_buffs__( struct xp_stats *stats )
 {
     char *buffs[3] = {
-        "up",
+        "other",
         "down",
         "filtered"
     };

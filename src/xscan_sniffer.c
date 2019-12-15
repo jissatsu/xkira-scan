@@ -5,83 +5,73 @@ void packet_handler( u_char *args, const struct pcap_pkthdr *header,
 {   
     char src_ip[20];
     char dst_ip[20];
-    short proto;
     uint16_t src_port;
     uint16_t dst_port;
     struct ip *ip = (struct ip *) (packet + 14);
     struct tcphdr *tcp;
-    struct icmp *icmp;
     struct xp_stats *stats = (struct xp_stats *) args;
     
     strcpy( src_ip, inet_ntoa( ip->ip_src ) );
     strcpy( dst_ip, inet_ntoa( ip->ip_dst ) );
 
-    if ( setup.type == X_SYN ) {
-        proto = IPPROTO_TCP;
+    // the packet must be for us and the source ip must be same as the current host's ip
+    if ( strcmp( dst_ip, setup.ip ) != 0 || strcmp( src_ip, stats->current_host.ip ) != 0 ) {
+        return;
     }
     
-    if ( setup.type == X_ICMP ) {
-        proto = IPPROTO_ICMP;
+    // mark current host as `up`
+    if ( !stats->current_host.state ) {
+        stats->current_host.state = 1;
     }
 
-    // the packet must be for us and the source ip must be same as the current host's ip
-    if ( strcmp( dst_ip, setup.ip ) == 0 && strcmp( src_ip, stats->current_host.ip ) == 0 )
+    // if it is not a tcp response, STOP
+    if ( ip->ip_p != IPPROTO_TCP ) {
+        return;
+    }
+
+    tcp      = (struct tcphdr *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
+    src_port = ntohs( tcp->th_sport );
+    dst_port = ntohs( tcp->th_dport );
+    
+    // the source port must be in the port range
+    if ( is_scan_port( src_port ) == 0 )
     {
-        // mark current host as `up`
-        if ( !stats->current_host.state ) {
-            stats->current_host.state = 1;
+        if ( tcp->syn && tcp->ack ) {
+            #ifdef DEBUG
+                v_out(
+                    VDEBUG,
+                    "%s:%d -> %s:%d - [ACK]\n",
+                    src_ip, src_port, dst_ip, dst_port
+                );
+            #endif
+            xscan_add_port(
+                src_port,
+                XOPEN,
+                stats->current_host.ports,
+                stats->nports
+            );
         }
-
-        if ( proto == IPPROTO_TCP && ip->ip_p == proto )
-        {
-            tcp      = (struct tcphdr *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
-            src_port = ntohs( tcp->th_sport );
-            dst_port = ntohs( tcp->th_dport );
-            
-            if ( is_scan_port( src_port ) == 0 )
-            {
-                if ( tcp->syn && tcp->ack ) {
-                    #ifdef DEBUG
-                        v_out( VDEBUG, "%s:%d -> %s:%d - [ACK]\n", src_ip, src_port, dst_ip, dst_port );
-                    #endif
-                    xscan_add_port(
-                        src_port,
-                        XOPEN,
-                        stats->current_host.ports,
-                        stats->nports
-                    );
-                }
-                else if ( tcp->rst ) {
-                    #ifdef DEBUG
-                        v_out( VDEBUG, "%s:%d -> %s:%d - [RST]\n", src_ip, src_port, dst_ip, dst_port );
-                    #endif
-                    xscan_add_port(
-                        src_port,
-                        XCLOSED,
-                        stats->current_host.ports,
-                        stats->nports
-                    );
-                }
-                // host responded on a port
-                if ( !stats->current_host.port_resp ) {
-                    stats->current_host.port_resp = 1;
-                }
-            }
+        else if ( tcp->rst ) {
+            #ifdef DEBUG
+                v_out(
+                    VDEBUG,
+                    "%s:%d -> %s:%d - [RST]\n",
+                    src_ip, src_port, dst_ip, dst_port
+                );
+            #endif
+            xscan_add_port(
+                src_port,
+                XCLOSED,
+                stats->current_host.ports,
+                stats->nports
+            );
         }
-
-        if ( proto == IPPROTO_ICMP && ip->ip_p == proto )
-        {
-            icmp = (struct icmp *) (packet + 14 + ((ip->ip_hl & 0x0f) * 4));
-            // packet id must match our pid
-            if ( ntohs( icmp->icmp_id ) != setup.pid ) {
-                return;
-            }
-            if ( icmp->icmp_type == ICMP_ECHOREPLY ) {
-                printf( "icmp->icmp_id = %d and host [%s] is UP\n", icmp->icmp_id, src_ip );
-            }
+        
+        // host responded on a port
+        if ( !stats->current_host.port_resp ) {
+            stats->current_host.port_resp = 1;
         }
     }
-    return;
 }
 
 short xscan_start_receiver( struct xp_stats *stats )

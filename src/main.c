@@ -4,7 +4,6 @@
 static void __usage( char *prog )
 {
     printf( "Usage: %s\n", prog );
-    printf( "-t [Scan type]\n" );
     printf( "-d [Destination address]\n" );
     printf( "-p [Port or Port range]\n" );
     exit( 1 );
@@ -18,13 +17,9 @@ int main( int argc, char **argv )
     
     args.host    = NULL;
     args.ports   = NULL;
-    args.type    = NULL;
 
-    while ( (opt = getopt( argc, argv, "t:d:p:v" )) != -1 ) {
+    while ( (opt = getopt( argc, argv, "d:p:" )) != -1 ) {
         switch ( opt ) {
-            case 't':
-                args.type  = optarg;
-                break;
             case 'd':
                 args.host  = optarg;
                 break;
@@ -37,7 +32,7 @@ int main( int argc, char **argv )
     }
 
     xscan_banner();
-    if ( !args.host || !args.type ) {
+    if ( !args.host || !args.ports ) {
         __usage( argv[0] );
     }
     
@@ -65,8 +60,7 @@ int main( int argc, char **argv )
     // wait for the sniffer to load fully, then initiate the scan
     mssleep( 0.5 );
     __xscan_initiate__( &stats );
-    // wait for the receiver to terminate
-    //pthread_join( thread, NULL );
+
     xscan_print_hosts( &stats );
     xscan_free_stats( &stats );
     exit( 0 );

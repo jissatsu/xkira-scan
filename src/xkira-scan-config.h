@@ -26,7 +26,6 @@ typedef enum { XOPEN = 1, XCLOSED } port_t;
 // xkira-scan-config.h
 struct args
 {
-    char *type;
     char *host;
     char *ports;
 }
@@ -85,7 +84,6 @@ struct xp_setup
     pid_t pid;            /* process id */
     char ip[15];          /* our ip address */
     char iface[50];       /* our interface name */
-    short type;           /* scan type (icmp or syn) */
     short on;             /* range scan (scan a subnet or multiple ports) */
     short tty;
     struct ports _ports;  /* ports to scan */

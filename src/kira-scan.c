@@ -35,7 +35,7 @@ void __xscan_initiate__( struct xp_stats *stats )
         stats->done = cpercent(
             (double) stats->tpkts, (double) stats->nsent
         );
-        printf( "\rScanning progress - [%0.2lf%%]", stats->done );
+        printf( "Scanning progress - [%0.2lf%%]\n", stats->done );
         xscan_accum_stats( stats );
     }
     v_ch( '\n' );
@@ -128,26 +128,13 @@ short xscan_send_packet( short proto, char *src_ip, char *dst_ip, uint16_t src_p
 
 short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
 {
-    short proto;
     short dd;
     uint16_t src_port, dst_port;
     struct libnet_stats lstat;
     
-    src_port = 0x00;
-    dst_port = 0x00;
+    src_port = 8000;
+    dst_port = setup._ports.start;
     dd       = (stats->nports > 1 || stats->nports < 1) ? 1 : 0 ;
-    
-    switch ( setup.type ) {
-        case X_SYN:
-            src_port = 8000;
-            dst_port = setup._ports.start;
-            proto    = IPPROTO_TCP;
-	    break;
-
-	default:
-        proto = IPPROTO_ICMP;
-	    break;
-    }
 
     // reset current host's state and port_resp
     xscan_reset_host( &stats->current_host );
@@ -164,7 +151,7 @@ short xscan_scan_host( struct xp_stats *stats, char *src_ip, char *dst_ip )
             // the scan receiver to either 1 (open) or 2 (closed)
             stats->current_host.ports[i].state = 0;
         }
-        if ( xscan_send_packet( proto, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
+        if ( xscan_send_packet( IPPROTO_TCP, src_ip, dst_ip, src_port, dst_port ) < 0 ) {
             return -1;
         }
         libnet_clear_packet( ltag );
@@ -242,7 +229,6 @@ void xscan_accum_stats( struct xp_stats *stats )
             __die( "%s", xscan_errbuf );
         }
     }
-    v_ch( '\n' );
 }
 
 short xscan_push_host( xstate_t state, SCHost host )
