@@ -14,6 +14,7 @@ extern "C" {
 void  xscan_print_hosts( struct xp_stats *stats );
 void  xscan_print_ports( SCPorts *ports, uint16_t nports );
 void  xscan_free_stats( struct xp_stats *stats );
+void  xscan_init_show( struct xp_stats *stats );
 
 double cpercent( double total, double frac );
 

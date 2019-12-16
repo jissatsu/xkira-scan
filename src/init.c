@@ -6,7 +6,7 @@ short __xscan_init__( struct args *args, struct xp_stats *stats )
     memset( stats, 0, sizeof( struct xp_stats ) );
 
     // check if output goes to the terminal
-    if ( isatty( 1 ) && isatty( 2 ) ) {
+    if ( isatty( 1 ) ) {
         setup.tty = 1;
     }
     o_set_tty( setup.tty );
@@ -94,6 +94,7 @@ short __init_stats__( struct xp_stats *stats )
         stats->tpkts = (stats->nhosts * stats->nports ) + (stats->nhosts * 2);
     } else {
         stats->nports = 1;
+        // here we add `stats->nhosts` at the end because of the additional icmp probe
         stats->tpkts = (stats->nhosts * stats->nports ) + stats->nhosts;
     }
     

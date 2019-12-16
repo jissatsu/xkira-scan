@@ -11,7 +11,7 @@ void xscan_print_hosts( struct xp_stats *stats )
         for ( register uint16_t i = 0 ; i < stats->ndown ; i++ ) {
             v_out(
                 VINF,
-                "Host [%s] is down!\n",
+                "Host [%s] is either down or behind a firewall!\n",
                 stats->scanned_hosts[1].buffer[i]->ip
             );
         }
@@ -125,6 +125,28 @@ char * xscan_portstate_expl( port_t state )
             break;
     }
     return state_expl;
+}
+
+void xscan_init_show( struct xp_stats *stats )
+{
+    LB2IP( stats->scan_ip, stats->current_host.ip );
+    v_out( VINF, "Initiated SYN scan!\n" );
+    
+    if ( setup._host.subnet ) {
+        v_out(
+            VINF,
+            "Scanning subnet - /%d\n",
+            setup._host.subnet
+        );
+    } else {
+        v_out( VINF, "Scanning 1 host\n" );
+    }
+    v_out(
+        VINF,
+        "Starting from host [%s]\n",
+        stats->current_host.ip
+    );
+    v_ch( '\n' );
 }
 
 void xscan_free_stats( struct xp_stats *stats )

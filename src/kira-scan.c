@@ -5,12 +5,8 @@ void __xscan_initiate__( struct xp_stats *stats )
     if ( __init_stats__( stats ) < 0 ) {
         __die( "%s", xscan_errbuf );
     }
-
-    LB2IP( stats->scan_ip, stats->current_host.ip );
-    v_out( VINF, "Initiated SYN scan!\n" );
-    v_out( VINF, "Scanning subnet - /%d\n", setup._host.subnet );
-    v_out( VINF, "Starting from host [%s]\n", stats->current_host.ip );
-
+    
+    xscan_init_show( stats );
     #ifdef DEBUG
         v_out( VDEBUG, "%s: Total hosts   -> %d\n", __FILE__, stats->nhosts );
         v_out( VDEBUG, "%s: Total ports   -> %d\n", __FILE__, stats->nports );
@@ -269,12 +265,13 @@ short xscan_push_host( xstate_t state, SCHost host )
 // set the push buffer and expand it for the next item
 short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint16_t newsize )
 {
+    // we have already allocated the first slot to hold a pointer of type `SCHost` in `__xscan_init_buffs__()`
+    // now give enough space for the `SCHost` structure in the current slot
     push_loc->buffer[offset] = (SCHost *) calloc( 1, sizeof( SCHost ) );
     if ( !push_loc->buffer[offset] ) {
         sprintf(
             xscan_errbuf, 
-            "%s - %d", strerror( errno ),
-            __LINE__
+            "%s - %d", strerror( errno ), __LINE__
         );
         return -1;
     }
@@ -284,13 +281,13 @@ short xscan_set_pushbuff( SChosts *push_loc, SCHost host, uint16_t offset, uint1
     if ( !push_loc->buffer[offset]->ports ) {
         sprintf(
             xscan_errbuf, 
-            "%s - %d", strerror( errno ),
-            __LINE__
+            "%s - %d", strerror( errno ), __LINE__
         );
         return -1;
     }
     
     // expand the current buffer
+    // allocate the next slot to hold a pointer of type `SCHost`
     push_loc->buffer = xscan_expand_buff( push_loc->buffer, newsize );
     if ( !push_loc->buffer ) {
         return -1;
