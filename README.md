@@ -2,12 +2,11 @@
 xkira-scan is a SYN / ICMP scanning module (Linux only)
 
 ## About
-* xkira-scan performs a SYN scan against a single host or a subnet on a specific port or port-range
-and splits the result into 3 categories:
+* xkira-scan performs a `SYN` scan against a single host or a subnet on a specific port or port-range and splits the result into 3 categories:
 
-	* DOWN     - hosts that appear to be down or behind a firewall
-	* FILTERED - hosts that are actually up, but have all the scan ports filtered
-	* OTHER    - hosts that are up and have atleast one scan port open or closed (responded with RST or ACK)
+	* `DOWN`     - hosts that appear to be down or behind a firewall
+	* `FILTERED` - hosts that are actually up, but have all the scan ports filtered
+	* `OTHER`    - hosts that are up and have atleast one scan port open or closed (responded with an `RST` or `ACK`)
 
 ## Libraries used
 	* libpcap - version 1.7.4
