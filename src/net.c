@@ -1,40 +1,5 @@
 #include "net.h"
 
-/*
- * Notify the kernel about our ipv4 header
- * @param `int *sock` A pointer to a socket descriptor
- * @param `int *hdrincl`
-*/
-void sockopt_hdrincl( int *sock, int *hdrincl )
-{
-    int opt = 1;
-    int st = setsockopt(
-        *sock,
-        IPPROTO_IP,
-        IP_HDRINCL,
-        &opt,
-        sizeof( opt )
-    );
-    *hdrincl = (st == 0) ? 1 : 0 ;
-}
-
-/* Generate a random ip address */
-char * rand_addr( void )
-{
-    uint8_t addr[4];
-    time_t t;
-    static char rand_addr[30];
-
-    srand( (unsigned) time( &t ) );
-    addr[0] = rand() % 255;
-    addr[1] = rand() % 255;
-    addr[2] = rand() % 255;
-    addr[3] = rand() % 255;
-
-    sprintf( rand_addr, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3] );
-    return rand_addr;
-}
-
 uint32_t calc_nhosts( short subnet )
 {
     char mask[30];
@@ -65,20 +30,6 @@ uint32_t net_off( char *ip, short subnet )
     int_msk = IP2LB( mask );
     off     = int_ip & int_msk;
     return off;
-}
-
-/* Create an address structure of type `struct sockaddr_in` */
-struct sockaddr_in net_sockaddr( uint16_t family, uint16_t port, char *addr )
-{
-    struct sockaddr_in sock_addr;
-
-    if ( port < 1 || port > 65535 ) {
-        port = 80;
-    }
-    sock_addr.sin_family      = family;
-    sock_addr.sin_port        = htons( port );
-    sock_addr.sin_addr.s_addr = inet_addr( ( !addr ) ? rand_addr() : addr  );
-    return sock_addr;
 }
 
 char * portservice( uint16_t port )
