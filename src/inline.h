@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifdef __inline
+    #undef __inline
+#endif
+
 #ifdef __GNUC__
     #define __inline __attribute__((always_inline))
 #else
