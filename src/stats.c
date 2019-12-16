@@ -139,7 +139,11 @@ void xscan_init_show( struct xp_stats *stats )
             setup._host.subnet
         );
     } else {
-        v_out( VINF, "Scanning 1 host\n" );
+        v_out(
+            VINF,
+            "Scanning host %s [%s]\n",
+            setup._host.ip, setup._host.name
+        );
     }
     v_out(
         VINF,

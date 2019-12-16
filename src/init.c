@@ -254,9 +254,10 @@ short xscan_hostinfo( char *host, struct xp_setup *setup )
     {
         if( inet_aton( ip, &addr ) ) {
             hp = gethostbyaddr( (const void *) &addr, sizeof( addr ), AF_INET );
-            if ( hp )
-            {
+            if ( hp ) {
                 setup->_host.name = hp->h_name;
+            } else {
+                setup->_host.name = "Unknown";
             }
         }
         setup->_host.ip = ip;
