@@ -94,7 +94,7 @@ short xscan_start_receiver( struct xp_stats *stats )
 void * scan_sniffer( void *st )
 {
     pcap_t *handle;
-    int timeout = 0;
+    int timeout = 100;
     int promisc = 0;
 
     handle = pcap_open_live(

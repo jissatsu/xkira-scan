@@ -8,6 +8,10 @@ xkira-scan is a SYN / ICMP scanning module (Linux only)
 	* `FILTERED` - hosts that are actually up, but have all the scan ports filtered
 	* `OTHER`    - hosts that are up and have atleast one scan port open or closed (responded with an `RST` or `ACK`)
 
+### Tested on 
+* `Kali Linux 2018.1-amd64`
+* `Linux Mint`
+
 ## Libraries used
 	* libpcap - version 1.7.4
 	* libnet  - version 1.1.6
