@@ -1,7 +1,7 @@
 CC=gcc
 RN=-Wall
 LIBS=-lnet -lpthread -lpcap -lxstr
-LDIR=-Lsrc/libs
+LDIR=src/libs
 ODIR=obj
 DEBUG=-DDEBUG
 EXECPATH=/usr/bin
@@ -23,6 +23,7 @@ objs:
 	$(CC) $(RN) -c src/output/output.c -o $(ODIR)/output.o
 
 all:
+	make -C $(LDIR) lib
 	make objs;
 	$(CC) $(RN) \
 	$(ODIR)/main.o \
@@ -35,11 +36,11 @@ all:
 	$(ODIR)/net.o \
 	$(ODIR)/output.o \
 	-o $(EXECPATH)/$(EXEC) \
-	$(LIBS) $(LDIR);
+	$(LIBS) -L$(LDIR);
 
 	chmod +x $(EXECPATH)/$(EXEC)
 
 clean:
 	rm -f $(ODIR)/*.o
 
-.PHONY: objs, all, clean
+.PHONY: objs, all, lib, clean
