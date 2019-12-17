@@ -43,4 +43,4 @@ all:
 clean:
 	rm -f $(ODIR)/*.o
 
-.PHONY: objs, all, lib, clean
+.PHONY: objs, all, clean
