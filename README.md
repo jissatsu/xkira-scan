@@ -10,6 +10,7 @@ xkira-scan is a SYN / ICMP scanning module (Linux only)
 
 ### Tested on 
 * `Kali Linux 2018.1-amd64`
+* `Kali Linux 2019.3-amd64`
 * `Linux Mint`
 
 ## Libraries used
