@@ -13,6 +13,12 @@ xkira-scan is a SYN / ICMP scanning module (Linux only)
 * `Kali Linux 2019.3-amd64`
 * `Linux Mint`
 
+## Usage
+* scan a subnet on a single port `sudo kira-scan -d 31.111.42.210/26 -p 80`
+* scan a subnet on a port range  `sudo kira-scan -d 31.111.42.210/30 -p 20-22`
+* scan a single host on a single port `sudo kira-scan -d 31.111.42.210 -p 80`
+* scan a single host on a port range  `sudo kira-scan -d 31.111.42.210 -p 20-22`
+
 ## Libraries used
 	* libpcap - version 1.7.4
 	* libnet  - version 1.1.6
