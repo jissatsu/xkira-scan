@@ -20,7 +20,7 @@ xkira-scan is a SYN / ICMP scanning module (Linux only)
 * scan a single host on a port range  `sudo kira-scan -d 31.111.42.210 -p 20-22`
 
 ## Libraries used
-	* libpcap - version 1.7.4 (Works with libpcap-1.9.1 too)
+	* libpcap - version 1.7.4 (Works fine with libpcap-1.9.1 too)
 	* libnet  - version 1.1.6
 
 ## Gcc version used
