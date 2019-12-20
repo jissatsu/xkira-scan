@@ -1,5 +1,5 @@
 # xkira-scan
-xkira-scan is a SYN / ICMP scanning module (Linux only)
+xkira-scan is a SYN / ICMP scanning module
 
 ## About
 * xkira-scan performs a `SYN` scan against a single host or a subnet on a specific port or port-range and splits the result into 3 categories:
