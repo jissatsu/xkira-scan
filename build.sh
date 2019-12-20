@@ -1,5 +1,7 @@
 #!/bin/bash
 
+UNAME=$(uname -m)
+
 warning()
 {
     echo -e "\n\e[33m[WARNING] \e[0m"
@@ -59,3 +61,22 @@ case "$stat" in
         exit 1
         ;;
 esac
+
+case "$UNAME" in
+    x86_64 | amd64 )
+        if [ -d /usr/lib/x86_64-linux-gnu ]; then
+            # create symlink to the library in `/usr/lib/x86_64-linux-gnu`
+            sudo unlink /usr/lib/x86_64-linux-gnu/libpcap.so.1
+            sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/x86_64-linux-gnu/libpcap.so.1
+        fi
+        ;;
+    i386 )
+        if [ -d /usr/lib/i386-linux-gnu ]; then
+            # create symlink to the library in `/usr/lib/i386-linux-gnu`
+            sudo unlink /usr/lib/i386-linux-gnu/libpcap.so.1
+            sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/i386-linux-gnu/libpcap.so.1
+        fi
+        ;;
+esac
+# create symlink to the library in `/usr/lib`
+sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
