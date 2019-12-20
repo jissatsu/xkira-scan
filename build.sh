@@ -66,10 +66,10 @@ case "$UNAME" in
     x86_64 | amd64 )
         if [ -d /usr/lib/x86_64-linux-gnu ]; then
             # create symlink to the library in `/usr/lib/x86_64-linux-gnu`
-			if [ -L /usr/lib/x86_64-linux-gnu/libpcap.so.1 ]; then
-            	sudo unlink /usr/lib/x86_64-linux-gnu/libpcap.so.1
-           		sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/x86_64-linux-gnu/libpcap.so.1
+            if [ -L /usr/lib/x86_64-linux-gnu/libpcap.so.1 ]; then
+                sudo unlink /usr/lib/x86_64-linux-gnu/libpcap.so.1
 			fi
+            sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/x86_64-linux-gnu/libpcap.so.1
 		fi
         ;;
     i386 )
@@ -77,13 +77,13 @@ case "$UNAME" in
             # create symlink to the library in `/usr/lib/i386-linux-gnu`
 			if [ -L /usr/lib/i386-linux-gnu/libpcap.so.1 ]; then
             	sudo unlink /usr/lib/i386-linux-gnu/libpcap.so.1
-            	sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/i386-linux-gnu/libpcap.so.1
         	fi
+            sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/i386-linux-gnu/libpcap.so.1
 		fi
         ;;
 esac
 # create symlink to the library in `/usr/lib`
 if [ -L /usr/lib/libpcap.so.1 ]; then
 	sudo unlink /usr/lib/libpcap.so.1
-	sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
 fi
+sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
