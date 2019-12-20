@@ -7,6 +7,18 @@ warning()
     echo -e "It will override the pcap and libnet header files (if any) in /usr/local/include!\n"
 }
 
+install_flex()
+{
+    cd /usr/local/lib
+    wget http://prdownloads.sourceforge.net/flex/flex-2.5.33.tar.gz?download
+    tar -xvzf flex-2.5.33.tar.gz
+
+    cd flex-2.5.33
+    ./configure --prefix=/usr/local/flex
+    sudo make
+    sudo make install
+}
+
 install_pcap()
 {
     cd /usr/local/lib
@@ -36,6 +48,7 @@ read -p "$(echo -e '\e[33mDo you want to proceed? (y/n)\e[0m -> ')" stat
 
 case "$stat" in
     y | yes )
+        install_flex
         install_pcap
         install_libnet
         ;;
