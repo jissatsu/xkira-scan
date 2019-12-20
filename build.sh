@@ -66,3 +66,4 @@ esac
 if [ -L /usr/lib/libpcap.so.1 ]; then
 	sudo unlink /usr/lib/libpcap.so.1
 fi
+sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
