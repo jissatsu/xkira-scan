@@ -7,6 +7,20 @@ warning()
     echo -e "It will override the pcap and libnet header files (if any) in /usr/local/include!\n"
 }
 
+install_bison()
+{
+    cd /usr/local/lib
+    wget http://ftp.gnu.org/gnu/bison/bison-3.4.tar.gz
+    tar -zxvf bison-3.4.tar.gz
+
+    cd bison-3.4
+    sudo ./configure
+    sudo make
+    sudo make install
+    sudo unlink /usr/bin/bison
+    sudo ln -s /usr/local/bin/bison /usr/bin/bison
+}
+
 install_pcap()
 {
     cd /usr/local/lib
@@ -36,6 +50,7 @@ read -p "$(echo -e '\e[33mDo you want to proceed? (y/n)\e[0m -> ')" stat
 
 case "$stat" in
     y | yes )
+        install_bison
         install_pcap
         install_libnet
         ;;
