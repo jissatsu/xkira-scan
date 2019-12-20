@@ -1,6 +1,14 @@
 #!/bin/bash
 
+ROOT_ID=0
+E_NOTROOT=87
 UNAME=$(uname -m)
+
+abort_root()
+{
+    echo -e "\e[33mMust be root to run this script!\e[0m"
+    exit $E_NOTROOT
+}
 
 warning()
 {
@@ -16,11 +24,11 @@ install_bison()
     tar -zxvf bison-3.4.tar.gz
 
     cd bison-3.4
-    sudo ./configure
-    sudo make
-    sudo make install
-    sudo unlink /usr/bin/bison
-    sudo ln -s /usr/local/bin/bison /usr/bin/bison
+    ./configure
+    make
+    make install
+    unlink /usr/bin/bison
+    ln -s /usr/local/bin/bison /usr/bin/bison
 }
 
 install_pcap()
@@ -30,9 +38,9 @@ install_pcap()
     tar xzvf libpcap-1.8.1.tar.gz
 
     cd libpcap-1.8.1
-    sudo ./configure --prefix=/usr/local
-    sudo make
-    sudo make install
+    ./configure --prefix=/usr/local
+    make
+    make install
 }
 
 install_libnet()
@@ -42,11 +50,12 @@ install_libnet()
     tar xzvf libnet-1.1.6.tar.gz
 
     cd libnet-1.1.6
-    sudo ./configure --prefix=/usr/local
-    sudo make
-    sudo make install
+    ./configure --prefix=/usr/local
+    make
+    make install
 }
 
+[ $UID -ne $ROOT_ID ] && abort_root
 warning
 read -p "$(echo -e '\e[33mDo you want to proceed? (y/n)\e[0m -> ')" stat
 
@@ -62,8 +71,13 @@ case "$stat" in
         ;;
 esac
 
+if [ -d /etc/ld.so.conf.d ]; then
+	echo "/usr/local/lib" > /etc/ld.so.conf.d/99kira-scan.conf
+	ldconfig
+fi
+
 # create symlink to the library in `/usr/lib`
 if [ -L /usr/lib/libpcap.so.1 ]; then
-	sudo unlink /usr/lib/libpcap.so.1
+	unlink /usr/lib/libpcap.so.1
 fi
-sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
+ln -s /usr/local/lib/libpcap.so.1 /usr/lib/libpcap.so.1
