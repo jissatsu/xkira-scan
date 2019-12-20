@@ -68,18 +68,18 @@ case "$UNAME" in
             # create symlink to the library in `/usr/lib/x86_64-linux-gnu` if exists
             if [ -L /usr/lib/x86_64-linux-gnu/libpcap.so.1 ]; then
                 sudo unlink /usr/lib/x86_64-linux-gnu/libpcap.so.1
-			fi
+            fi
             sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/x86_64-linux-gnu/libpcap.so.1
-	    fi
+        fi
         ;;
     i386 )
         if [ -d /usr/lib/i386-linux-gnu ]; then
             # create symlink to the library in `/usr/lib/i386-linux-gnu` if exists
-			if [ -L /usr/lib/i386-linux-gnu/libpcap.so.1 ]; then
-            	sudo unlink /usr/lib/i386-linux-gnu/libpcap.so.1
-        	fi
+            if [ -L /usr/lib/i386-linux-gnu/libpcap.so.1 ]; then
+                sudo unlink /usr/lib/i386-linux-gnu/libpcap.so.1
+            fi
             sudo ln -s /usr/local/lib/libpcap.so.1 /usr/lib/i386-linux-gnu/libpcap.so.1
-	    fi
+        fi
         ;;
 esac
 # create symlink to the library in `/usr/lib`
