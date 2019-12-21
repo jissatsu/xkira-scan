@@ -13,6 +13,12 @@ else
 	override DEBUG=
 endif
 
+ifeq ($(VERBOSE),1)
+	override VERBOSE=-v
+else
+	override VERBOSE=
+endif
+
 build:
 	chmod +x build.sh
 	./build.sh
@@ -36,7 +42,7 @@ all:
 	make -C $(LDIR) lib
 	make build;
 	make objs;
-	$(CC) $(RN) \
+	$(CC) $(RN) $(VERBOSE) \
 	$(ODIR)/main.o \
 	$(ODIR)/banner.o \
 	$(ODIR)/kira-scan.o \
